@@ -1,27 +1,67 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* styles/globals.css */
+.main-container {
+  font-family: 'Arial', sans-serif;
+  background-color: #ffffff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.header {
+  background-color: #6d31c9;
+  padding: 1rem;
+  text-align: left;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+.content {
+  flex: 1;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 8px;
+  margin: 2rem;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.search-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  width: 60%;
+  padding: 0.75rem;
+  border: 1px solid #6d31c9; /* Add blue border */
+  border-radius: 50px; /* Make input rounded */
+  font-size: 1rem;
+}
+
+.add-event-btn {
+  background-color: #6d31c9;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 50px; /* Make button rounded */
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.add-event-btn:hover {
+  background-color: #6d31c9;
+}
+
+.no-events {
+  text-align: center;
+  font-size: 1.25rem;
+  color: #888;
+  margin-top: 2rem;
+  font-weight: bold; /* Make no event text bolder */
+}
+
+hr {
+  border: 0.5px solid #ccc;
+  margin: 1rem 0;
 }
