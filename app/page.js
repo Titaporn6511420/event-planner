@@ -26,9 +26,9 @@ export default function HomePage() {
         <h1>Event Planner.</h1>
       </header>
       <div className="content">
-        <h2><strong>Upcoming Event</strong></h2>
         <div className="search-section">
-          <input type="text" placeholder="Search" className="search-input" />
+          <h2><strong>Upcoming Event</strong></h2>
+          <input type="text" placeholder="Search..." className="search-input" />
           <Link href="/add-event">
             <button className="add-event-btn">+ Add new event</button>
           </Link>

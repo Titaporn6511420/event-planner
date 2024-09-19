@@ -93,7 +93,7 @@ export default function AddEvent() {
 
       <style jsx>{`
         * {
-          font-family: 'Arial', sans-serif;
+            font-family: 'Jost', sans-serif;
         }
 
         .event-form-container {

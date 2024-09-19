@@ -1,6 +1,8 @@
-/* styles/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap');
+
+
 .main-container {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Jost', sans-serif;
   background-color: #ffffff;
   height: 100vh;
   display: flex;
@@ -28,12 +30,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 20px;
 }
 
 .search-input {
+  font-family: 'Jost', sans-serif;
+  flex-grow: 1;
+  margin: 0 20px;
   width: 60%;
-  padding: 0.75rem;
+  padding: 8px;
   border: 1px solid #6d31c9; /* Add blue border */
   border-radius: 50px; /* Make input rounded */
   font-size: 1rem;
@@ -41,8 +46,9 @@
 
 .add-event-btn {
   background-color: #6d31c9;
+  font-family: 'Jost', sans-serif;
   color: white;
-  padding: 0.75rem 1.5rem;
+  padding: 10px 20px;
   border: none;
   border-radius: 50px; /* Make button rounded */
   font-size: 1rem;

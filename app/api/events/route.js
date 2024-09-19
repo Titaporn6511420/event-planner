@@ -10,7 +10,7 @@ export async function POST(req) {
   if (!name || !details || !host || !date || !location) {
     return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
   }
-
+s
   try {
     await client.connect();
     const database = client.db('eventPlanner');
