@@ -39,7 +39,7 @@ export default function HomePage() {
         },
         body: JSON.stringify({ id }),
       });
-  
+
       if (res.ok) {
         // Remove the deleted event from the state
         setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id));
@@ -51,7 +51,6 @@ export default function HomePage() {
       console.error('Error deleting event:', error);
     }
   };
-  
 
   return (
     <div className="main-container">
@@ -83,6 +82,7 @@ export default function HomePage() {
                   <p><strong>Name :</strong> {event.name}</p>
                   <p><strong>Details :</strong> {event.details}</p>
                   <p><strong>Date :</strong> {new Date(event.date).toLocaleDateString()}</p>
+                  <p><strong>Time :</strong> {event.time}</p> {/* Display time */}
                   <p><strong>Location :</strong> {event.location}</p>
                 </div>
                 <div className="event-action">

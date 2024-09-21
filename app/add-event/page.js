@@ -7,13 +7,19 @@ export default function AddEvent() {
   const [details, setDetails] = useState('');
   const [host, setHost] = useState('');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState(''); // Time as string
   const [location, setLocation] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null); // Error state
+
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // Start loading
+    setError(null); // Reset error state
 
-    const eventData = { name, details, host, date, location };
+    const eventData = { name, details, host, date, time, location }; // Include time
 
     try {
       const response = await fetch('/api/events', {
@@ -26,17 +32,22 @@ export default function AddEvent() {
         router.push('/');
       } else {
         const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
+        setError(`Error: ${errorData.message}`); // Show error in UI
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      alert('An unexpected error occurred.');
+      setError('An unexpected error occurred.');
+    } finally {
+      setIsLoading(false); // End loading
     }
   };
 
   return (
     <div className="event-form-container">
       <h1>Add New Event</h1>
+
+      {error && <div className="error-message">{error}</div>} {/* Display error message */}
+
       <form onSubmit={handleSubmit} className="event-form">
         <label>
           Event Name:
@@ -47,6 +58,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the event's name"
+            disabled={isLoading} // Disable when loading
           />
         </label>
         <label>
@@ -58,6 +70,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the host's name"
+            disabled={isLoading} // Disable when loading
           />
         </label>
         <label>
@@ -68,6 +81,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the details"
+            disabled={isLoading} // Disable when loading
           />
         </label>
         <label>
@@ -78,6 +92,18 @@ export default function AddEvent() {
             onChange={(e) => setDate(e.target.value)}
             required
             className="form-input"
+            disabled={isLoading} // Disable when loading
+          />
+        </label>
+        <label>
+          Time: {/* Added time input */}
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            required
+            className="form-input"
+            disabled={isLoading} // Disable when loading
           />
         </label>
         <label>
@@ -89,14 +115,24 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the location"
+            disabled={isLoading} // Disable when loading
           />
         </label>
         <div className="form-buttons">
-          <button type="button" className="cancel-button" onClick={() => router.push('/')}>
+          <button
+            type="button"
+            className="cancel-button"
+            onClick={() => router.push('/')}
+            disabled={isLoading} // Disable when loading
+          >
             Cancel
           </button>
-          <button type="submit" className="add-button">
-            Add
+          <button
+            type="submit"
+            className="add-button"
+            disabled={isLoading} // Disable when loading
+          >
+            {isLoading ? 'Adding...' : 'Add'}
           </button>
         </div>
       </form>
@@ -119,6 +155,12 @@ export default function AddEvent() {
           text-align: center;
           font-size: 24px;
           margin-bottom: 20px;
+        }
+
+        .error-message {
+          color: red;
+          margin-bottom: 15px;
+          text-align: center;
         }
 
         .event-form {

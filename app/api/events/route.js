@@ -14,18 +14,17 @@ export async function GET(request) {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Error in GET method:', error);  // Log the error to understand the issue
+    console.error('Error in GET method:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
   }
 }
 
-
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, details, host, date, location } = body;
+    const { name, details, host, date, time, location } = body; // Include time field
 
-    if (!name || !details || !host || !date || !location) {
+    if (!name || !details || !host || !date || !time || !location) { // Validate time
       return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
     }
 
@@ -36,26 +35,25 @@ export async function POST(request) {
     await client.close();
     return new Response(JSON.stringify({ message: 'Event added', eventId: result.insertedId }), { status: 201 });
   } catch (error) {
-    console.error('Error in POST method:', error);  // Log the error for diagnosis
+    console.error('Error in POST method:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
   }
 }
 
-
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { _id, name, details, host, date, location } = body;
+    const { _id, name, details, host, date, time, location } = body; // Include time field
 
-    if (!_id || !name || !details || !host || !date || !location) {
+    if (!_id || !name || !details || !host || !date || !time || !location) { // Validate time
       return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
     }
 
     await client.connect();
     const events = client.db('event-planner').collection('events');
     const result = await events.findOneAndUpdate(
-      { _id: new ObjectId(_id) }, // Convert _id to ObjectId
-      { $set: { name, details, host, date, location } },
+      { _id: new ObjectId(_id) },
+      { $set: { name, details, host, date, time, location } }, // Update time field
       { returnDocument: 'after' }
     );
 
