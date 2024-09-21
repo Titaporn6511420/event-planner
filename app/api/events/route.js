@@ -1,7 +1,7 @@
 import { MongoClient, ObjectId } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const client = new MongoClient(uri);
 
 export async function GET(request) {
   try {
@@ -71,27 +71,28 @@ export async function PUT(request) {
   }
 }
 
-export async function DELETE(request) {
+export async function DELETE(req) {
   try {
-    const { id } = await request.json();
+    const { id } = await req.json();
 
     if (!id) {
       return new Response(JSON.stringify({ message: 'ID is required' }), { status: 400 });
     }
 
     await client.connect();
-    const events = client.db('event-planner').collection('events');
-    const result = await events.findOneAndDelete({ _id: new ObjectId(id) });
+    const db = client.db('event-planner');
+    const collection = db.collection('events');
 
-    await client.close();
-
-    if (result.value) {
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 1) {
       return new Response(JSON.stringify({ message: 'Event deleted' }), { status: 200 });
     } else {
       return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
     }
   } catch (error) {
-    console.error('Error in DELETE method:', error);
+    console.error('Error in DELETE API:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+  } finally {
+    await client.close();
   }
 }

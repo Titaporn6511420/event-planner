@@ -31,23 +31,24 @@ export default function HomePage() {
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this event?'); // Optional: Confirm before deleting
-    if (!confirmDelete) return; // Exit if the user cancels
+    try {
+      const res = await fetch(`/api/events`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
   
-    const response = await fetch(`/api/events`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ id }),
-    });
-  
-    if (response.ok) {
-      setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id));
-    } else {
-      const errorData = await response.json();
-      console.error('Failed to delete event', errorData.message);
-      alert(`Error: ${errorData.message}`);
+      if (res.ok) {
+        // Remove the deleted event from the state
+        setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id));
+        console.log('Event deleted successfully');
+      } else {
+        console.error('Failed to delete event:', res.status);
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
     }
   };
   
