@@ -1,5 +1,4 @@
-import { MongoClient } from 'mongodb';
-import { ObjectId } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -53,7 +52,7 @@ export async function PUT(request) {
     }
 
     await client.connect();
-    const events = client.db('eventPlanner').collection('events');
+    const events = client.db('event-planner').collection('events');
     const result = await events.findOneAndUpdate(
       { _id: new ObjectId(_id) }, // Convert _id to ObjectId
       { $set: { name, details, host, date, location } },
@@ -81,10 +80,11 @@ export async function DELETE(request) {
     }
 
     await client.connect();
-    const events = client.db('eventPlanner').collection('events');
-    const result = await events.findOneAndDelete({ _id: new ObjectId(id) }); // Convert id to ObjectId
+    const events = client.db('event-planner').collection('events');
+    const result = await events.findOneAndDelete({ _id: new ObjectId(id) });
 
     await client.close();
+
     if (result.value) {
       return new Response(JSON.stringify({ message: 'Event deleted' }), { status: 200 });
     } else {
