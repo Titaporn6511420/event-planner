@@ -5,19 +5,44 @@ const client = new MongoClient(uri);
 
 export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get('q')?.trim(); // Retrieve the search query
+
     await client.connect();
+    console.log("Connected to MongoDB");
+
     const events = client.db('event-planner').collection('events');
-    const eventsList = await events.find({}).sort({ date: -1 }).toArray();
+
+    // Initialize an empty query object
+    let query = {};
+
+    // If the query exists and is more than 1 character, filter events
+    if (q) {
+      query = {
+        $or: [
+          { name: { $regex: q, $options: 'i' } },
+          { details: { $regex: q, $options: 'i' } }
+        ]
+      };
+    }
+
+    console.log("Executing MongoDB query:", query); // Log the query
+
+    const eventsList = await events.find(query).sort({ date: 1 }).toArray();
+
+    console.log('Fetched events:', eventsList); // Log the fetched events
 
     await client.close();
     return new Response(JSON.stringify(eventsList), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in GET method:', error);
+    console.error('Error in GET method:', error); // Log the specific error
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
   }
 }
+
+
 
 export async function POST(request) {
   try {

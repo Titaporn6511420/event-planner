@@ -10,21 +10,28 @@ export default function HomePage() {
   useEffect(() => {
     const fetchEvents = async () => {
       let url = `/api/events`;
-      if (searchTerm) {
-        url += `?q=${encodeURIComponent(searchTerm)}`;
+
+      if (searchTerm.trim()) {
+        url += `?q=${encodeURIComponent(searchTerm.trim())}`;
       }
 
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-      } else {
-        console.error('Failed to fetch events');
+      try {
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+          setEvents(sortedEvents);
+        } else {
+          console.error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
       }
     };
 
     fetchEvents();
   }, [searchTerm]);
+
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -108,7 +115,6 @@ export default function HomePage() {
 
       <style jsx>{`
         .main-container {
-          padding: 20px;
           background-color: #f4f4f9;
         }
 
@@ -141,7 +147,7 @@ export default function HomePage() {
         }
 
         .add-event-btn {
-          background-color: #4CAF50;
+          background-color: #6d31c9;
           color: white;
           padding: 10px 20px;
           border: none;
@@ -203,7 +209,7 @@ export default function HomePage() {
         }
 
         .event-tasks-btn {
-          background-color: #4CAF50;
+          background-color: #6d31c9;
           color: white;
         }
 
