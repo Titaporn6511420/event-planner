@@ -42,8 +42,6 @@ export async function GET(request) {
   }
 }
 
-
-
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -68,30 +66,30 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { _id, name, details, host, date, time, location } = body; // Include time field
-
-    if (!_id || !name || !details || !host || !date || !time || !location) { // Validate time
-      return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
-    }
+    const { _id, ...updateData } = body;
 
     await client.connect();
     const events = client.db('event-planner').collection('events');
     const result = await events.findOneAndUpdate(
       { _id: new ObjectId(_id) },
-      { $set: { name, details, host, date, time, location } }, // Update time field
+      { $set: updateData },
       { returnDocument: 'after' }
     );
 
     await client.close();
     if (result.value) {
-      return new Response(JSON.stringify({ message: 'Event updated', event: result.value }), { status: 200 });
+      return new Response(JSON.stringify(result.value), { status: 200 });
     } else {
-      return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
+      return new Response("Event not found", { status: 404 });
     }
   } catch (error) {
     console.error('Error in PUT method:', error);
-    return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+    return new Response("Internal Server Error", { status: 500 });
   }
+}
+
+export async function PATCH(request) {
+  return PUT(request);
 }
 
 export async function DELETE(req) {

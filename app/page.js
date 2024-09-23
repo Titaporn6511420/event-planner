@@ -6,6 +6,7 @@ import Link from 'next/link';
 export default function HomePage() {
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState(null); // Error state
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -22,16 +23,15 @@ export default function HomePage() {
           const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
           setEvents(sortedEvents);
         } else {
-          console.error(`Failed to fetch events: ${response.status} ${response.statusText}`);
+          setError(`Failed to fetch events: ${response.status} ${response.statusText}`);
         }
       } catch (error) {
-        console.error('Error fetching events:', error);
+        setError('Error fetching events');
       }
     };
 
     fetchEvents();
   }, [searchTerm]);
-
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -48,14 +48,12 @@ export default function HomePage() {
       });
 
       if (res.ok) {
-        // Remove the deleted event from the state
         setEvents((prevEvents) => prevEvents.filter((event) => event._id !== id));
-        console.log('Event deleted successfully');
       } else {
-        console.error('Failed to delete event:', res.status);
+        setError('Failed to delete event');
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
+      setError('Error deleting event');
     }
   };
 
@@ -79,6 +77,7 @@ export default function HomePage() {
           </Link>
         </div>
         <hr />
+        {error && <div className="error-message">{error}</div>}
         {events.length === 0 ? (
           <div className="no-events">There's no event in here</div>
         ) : (
@@ -89,7 +88,7 @@ export default function HomePage() {
                   <p><strong>Name :</strong> {event.name}</p>
                   <p><strong>Details :</strong> {event.details}</p>
                   <p><strong>Date :</strong> {new Date(event.date).toLocaleDateString()}</p>
-                  <p><strong>Time :</strong> {event.time}</p> {/* Display time */}
+                  <p><strong>Time :</strong> {event.time}</p>
                   <p><strong>Location :</strong> {event.location}</p>
                 </div>
                 <div className="event-action">
@@ -117,35 +116,29 @@ export default function HomePage() {
         .main-container {
           background-color: #f4f4f9;
         }
-
         .header {
           text-align: center;
           margin-bottom: 30px;
         }
-
         .header h1 {
           font-size: 36px;
         }
-
         .content {
           width: 90%;
           max-width: 1200px;
           margin: 0 auto;
         }
-
         .search-section {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 20px;
         }
-
         .search-input {
           padding: 10px;
           font-size: 16px;
           width: 60%;
         }
-
         .add-event-btn {
           background-color: #6d31c9;
           color: white;
@@ -154,11 +147,9 @@ export default function HomePage() {
           border-radius: 5px;
           cursor: pointer;
         }
-
         .event-list {
           margin-top: 20px;
         }
-
         .event-card {
           background-color: #fff;
           padding: 20px;
@@ -169,26 +160,21 @@ export default function HomePage() {
           justify-content: space-between;
           align-items: center;
         }
-
         .event-details {
           flex: 1;
         }
-
         .event-details p {
           margin: 5px 0;
         }
-
         .event-action {
           display: flex;
           flex-direction: column;
           align-items: flex-end;
         }
-
         .event-action button,
         .event-action a {
           margin-bottom: 10px;
         }
-
         .event-update-btn,
         .event-delete-btn,
         .event-tasks-btn {
@@ -197,26 +183,27 @@ export default function HomePage() {
           border-radius: 5px;
           cursor: pointer;
         }
-
         .event-update-btn {
           background-color: #00aaff;
           color: white;
         }
-
         .event-delete-btn {
           background-color: #ff4b4b;
           color: white;
         }
-
         .event-tasks-btn {
           background-color: #6d31c9;
           color: white;
         }
-
         .event-update-btn:hover,
         .event-delete-btn:hover,
         .event-tasks-btn:hover {
           opacity: 0.8;
+        }
+        .error-message {
+          color: red;
+          margin-bottom: 15px;
+          text-align: center;
         }
       `}</style>
     </div>
