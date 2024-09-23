@@ -6,39 +6,33 @@ const client = new MongoClient(uri);
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const q = searchParams.get('q')?.trim(); // Retrieve the search query
+    const id = searchParams.get('id'); // Retrieve the event ID
 
     await client.connect();
-    console.log("Connected to MongoDB");
-
     const events = client.db('event-planner').collection('events');
 
-    // Initialize an empty query object
-    let query = {};
-
-    // If the query exists and is more than 1 character, filter events
-    if (q) {
-      query = {
-        $or: [
-          { name: { $regex: q, $options: 'i' } },
-          { details: { $regex: q, $options: 'i' } }
-        ]
-      };
+    if (id) {
+      // Fetch the specific event by ID
+      const event = await events.findOne({ _id: new ObjectId(id) });
+      if (event) {
+        return new Response(JSON.stringify(event), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } else {
+        return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
+      }
+    } else {
+      // Fetch all events
+      const eventsList = await events.find({}).toArray();
+      return new Response(JSON.stringify(eventsList), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-
-    console.log("Executing MongoDB query:", query); // Log the query
-
-    const eventsList = await events.find(query).sort({ date: 1 }).toArray();
-
-    console.log('Fetched events:', eventsList); // Log the fetched events
-
-    await client.close();
-    return new Response(JSON.stringify(eventsList), {
-      headers: { 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error('Error in GET method:', error); // Log the specific error
+    console.error('Error in GET method:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+  } finally {
+    await client.close();
   }
 }
 
@@ -66,10 +60,16 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { _id, ...updateData } = body;
+    const { _id, ...updateData } = body; // Extract _id from the body
+
+    if (!_id) {
+      return new Response(JSON.stringify({ message: 'Event ID is required' }), { status: 400 });
+    }
 
     await client.connect();
     const events = client.db('event-planner').collection('events');
+
+    // Find and update the event by ID, returning the updated document
     const result = await events.findOneAndUpdate(
       { _id: new ObjectId(_id) },
       { $set: updateData },
@@ -77,20 +77,18 @@ export async function PUT(request) {
     );
 
     await client.close();
+
     if (result.value) {
       return new Response(JSON.stringify(result.value), { status: 200 });
     } else {
-      return new Response("Event not found", { status: 404 });
+      return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
     }
   } catch (error) {
     console.error('Error in PUT method:', error);
-    return new Response("Internal Server Error", { status: 500 });
+    return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
   }
 }
 
-export async function PATCH(request) {
-  return PUT(request);
-}
 
 export async function DELETE(req) {
   try {
