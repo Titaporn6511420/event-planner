@@ -102,8 +102,8 @@ export default function HomePage() {
                     Delete
                   </button>
 
-                  <Link href={`/tasks/${event._id}`}>
-                    <button className="event-tasks-btn">Go to Details</button>
+                  <Link href={`/attendee/${event._id}`}>
+                    <button className="event-tasks-btn">Go to Detail</button>
                   </Link>
                 </div>
               </div>
