@@ -31,25 +31,33 @@ export default function UpdateEventPage({ params }) {
 
   const handleUpdate = async (data) => {
     try {
-      data._id = id; // Include ID in the data sent for updating
-      const response = await fetch(`${API_BASE}/events`, {
+      // Include the event ID in the request body
+      const updateData = { ...data, _id: id };
+  
+      const response = await fetch(`${API_BASE}/events/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
-
+  
       if (response.ok) {
         alert('Event updated successfully');
-        router.push('/'); // Redirect to the homepage after update
       } else {
-        setError('Failed to update event');
+        const errorData = await response.json();
+        console.warn(errorData.message || 'Failed to update event'); // Log the error
       }
+  
+      // Redirect to the homepage after attempting the update
+      router.push('/'); // Always redirect to homepage
     } catch (error) {
-      setError('Error updating event');
+      console.error('Error updating event:', error); // Log the error
+      // Still redirect to the homepage even if there is an error
+      router.push('/');
     }
   };
+
 
   const handleCancel = () => {
     router.push('/'); // Redirect to the homepage without changes

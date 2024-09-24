@@ -57,37 +57,43 @@ export async function POST(request) {
   }
 }
 
-export async function PUT(request) {
+export async function PUT(request, { params }) {
   try {
-    const body = await request.json();
-    const { _id, ...updateData } = body; // Extract _id from the body
-
-    if (!_id) {
-      return new Response(JSON.stringify({ message: 'Event ID is required' }), { status: 400 });
-    }
-
     await client.connect();
     const events = client.db('event-planner').collection('events');
+    
+    const eventId = params.id; // Make sure this is correctly set from the URL
 
-    // Find and update the event by ID, returning the updated document
+    // Check if the ID is a valid ObjectId
+    if (!ObjectId.isValid(eventId)) {
+        return new Response(JSON.stringify({ message: 'Invalid Event ID' }), { status: 400 });
+    }
+
+    const body = await request.json();
+    const { name, details, host, date, time, location } = body;
+
+    // Perform update
     const result = await events.findOneAndUpdate(
-      { _id: new ObjectId(_id) },
-      { $set: updateData },
-      { returnDocument: 'after' }
+        { _id: new ObjectId(eventId) },
+        { $set: { name, details, host, date, time, location } },
+        { returnDocument: 'after' }
     );
 
-    await client.close();
-
-    if (result.value) {
-      return new Response(JSON.stringify(result.value), { status: 200 });
-    } else {
-      return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
+    if (!result.value) {
+        return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
     }
+
+    return new Response(JSON.stringify(result.value), { status: 200 });
   } catch (error) {
-    console.error('Error in PUT method:', error);
+    console.error('Error updating event:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+  } finally {
+    await client.close();
   }
 }
+
+
+
 
 
 export async function DELETE(req) {
