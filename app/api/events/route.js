@@ -63,10 +63,11 @@ export async function PUT(request, { params }) {
     const events = client.db('event-planner').collection('events');
     
     const eventId = params.id; // Make sure this is correctly set from the URL
+    console.log('Event ID:', eventId); // Log the event ID
 
     // Check if the ID is a valid ObjectId
     if (!ObjectId.isValid(eventId)) {
-        return new Response(JSON.stringify({ message: 'Invalid Event ID' }), { status: 400 });
+      return new Response(JSON.stringify({ message: 'Invalid Event ID' }), { status: 400 });
     }
 
     const body = await request.json();
@@ -74,13 +75,15 @@ export async function PUT(request, { params }) {
 
     // Perform update
     const result = await events.findOneAndUpdate(
-        { _id: new ObjectId(eventId) },
-        { $set: { name, details, host, date, time, location } },
-        { returnDocument: 'after' }
+      { _id: new ObjectId(eventId) },
+      { $set: { name, details, host, date, time, location } },
+      { returnDocument: 'after' }
     );
 
+    console.log('FindOneAndUpdate result:', result); // Log the result
+
     if (!result.value) {
-        return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
+      return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
     }
 
     return new Response(JSON.stringify(result.value), { status: 200 });
@@ -91,7 +94,6 @@ export async function PUT(request, { params }) {
     await client.close();
   }
 }
-
 
 
 

@@ -33,7 +33,7 @@ export default function UpdateEventPage({ params }) {
     try {
       // Include the event ID in the request body
       const updateData = { ...data, _id: id };
-  
+
       const response = await fetch(`${API_BASE}/events/${id}`, {
         method: 'PUT',
         headers: {
@@ -41,14 +41,14 @@ export default function UpdateEventPage({ params }) {
         },
         body: JSON.stringify(updateData),
       });
-  
+
       if (response.ok) {
         alert('Event updated successfully');
       } else {
         const errorData = await response.json();
         console.warn(errorData.message || 'Failed to update event'); // Log the error
       }
-  
+
       // Redirect to the homepage after attempting the update
       router.push('/'); // Always redirect to homepage
     } catch (error) {
@@ -67,40 +67,53 @@ export default function UpdateEventPage({ params }) {
     <div className='event-form-container'>
       <h1>Update Event</h1>
       {error && <div className="error-message">{error}</div>}
-      <form onSubmit={handleSubmit(handleUpdate)}>
-        <div className='form-input'>
-          <label>Name:</label>
-          <input {...register("name", { required: true })} />
-        </div>
-        <div>
-          <label>Details:</label>
-          <input {...register("details", { required: true })} />
-        </div>
-        <div className='form-input'>
-          <label>Host:</label>
-          <input {...register("host", { required: true })} />
-        </div>
-        <div className='form-input'>
-          <label>Date:</label>
-          <input type="date" {...register("date", { required: true })} />
-        </div>
-        <div className='form-input'>
-          <label>Time:</label>
-          <input type="time" {...register("time", { required: true })} />
-        </div>
-        <div className='form-input'>
-          <label>Location:</label>
-          <input {...register("location", { required: true })} />
-        </div>
-        <div className='form-buttons'>
-        <button type="button" onClick={handleCancel} className="cancel-button">Cancel</button>
-          <button type="submit" className="update-button">Update Event</button>
-        </div>
+      <form onSubmit={handleSubmit(handleUpdate)} className="event-form">
+          <label>Event Name:
+            <input
+             {...register("name", 
+             { required: true })} 
+              className="form-input"
+            />
+          </label>
+        
+          <label>Details:
+            <input {...register("details", { required: true })} 
+            className="form-input"
+            />
+          </label>
+
+          <label>Host:
+            <input {...register("host", 
+            { required: true })} 
+            className="form-input"
+            />
+          </label>
+
+          <label>Date:
+          <input type="date" {...register("date", { required: true })}
+          className="form-input" />
+          </label>
+
+          <label>Time:
+          <input type="time" {...register("time", { required: true })} className="form-input" />
+          </label>
+
+          <label>Location:
+          <input {...register("location", { required: true })} className="form-input" />
+          </label>
+
+          <div className="form-buttons">
+
+          <button type="button" onClick={handleCancel} className="cancel-button">Cancel</button>
+          <button type="submit" className="add-button">Update Event</button>
+    
+          </div>
       </form>
       <style jsx>{`
-        * {
+         * {
           font-family: 'Jost', sans-serif;
         }
+
         .event-form-container {
           background-color: #fff;
           padding: 30px;
@@ -109,16 +122,32 @@ export default function UpdateEventPage({ params }) {
           max-width: 400px;
           margin: 0 auto;
         }
+
         h1 {
           text-align: center;
           font-size: 24px;
           margin-bottom: 20px;
         }
+
         .error-message {
           color: red;
           margin-bottom: 15px;
           text-align: center;
         }
+
+        .event-form {
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        label {
+          display: flex;
+          flex-direction: column;
+          font-size: 14px;
+          font-weight: bold;
+        }
+
         .form-input {
           padding: 10px;
           font-size: 16px;
@@ -126,13 +155,20 @@ export default function UpdateEventPage({ params }) {
           border: 1px solid #ccc;
           margin-top: 5px;
         }
+
+        textarea.form-input {
+          resize: none;
+          height: 100px;
+        }
+
         .form-buttons {
           display: flex;
           justify-content: space-between;
           margin-top: 20px;
         }
+
         .cancel-button,
-        .update-button {
+        .add-button {
           padding: 10px 20px;
           font-size: 16px;
           border-radius: 10px;
@@ -140,18 +176,22 @@ export default function UpdateEventPage({ params }) {
           cursor: pointer;
           transition: background-color 0.3s ease;
         }
+
         .cancel-button {
           background-color: #ff4b4b;
           color: white;
         }
+
         .cancel-button:hover {
           background-color: #ff6f6f;
         }
-        .update-button {
+
+        .add-button {
           background-color: #4CAF50;
           color: white;
         }
-        .update-button:hover {
+
+        .add-button:hover {
           background-color: #45a049;
         }
       `}</style>
