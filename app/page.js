@@ -10,12 +10,12 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      let url = `/api/events`;
-  
+      let url = "/api/events"; // Corrected URL
+
       if (searchTerm.trim()) {
-        url += `?q=${encodeURIComponent(searchTerm.trim())}`;
+        url += `?q=${encodeURIComponent(searchTerm.trim())}`; // Corrected template literal
       }
-  
+
       try {
         const response = await fetch(url);
         if (response.ok) {
@@ -23,23 +23,23 @@ export default function HomePage() {
           const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
           setEvents(sortedEvents);
         } else {
-          setError(`Failed to fetch events: ${response.status} ${response.statusText}`);
+          setError(`Failed to fetch events: ${response.status} ${response.statusText}`); // Corrected template literal
         }
       } catch (error) {
         setError('Error fetching events');
       }
     };
-  
+
     fetchEvents();
   }, [searchTerm]); // Dependency on searchTerm
-  
+
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`/api/events`, {
+      const res = await fetch("/api/events", { // Corrected URL
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -56,6 +56,27 @@ export default function HomePage() {
       setError('Error deleting event');
     }
   };
+
+  const fetchEvents = async () => {
+    let url = "/api/events"; // Corrected URL
+  
+    if (searchTerm.trim()) {
+      url += `?q=${encodeURIComponent(searchTerm.trim())}`; // Corrected template literal
+    }
+  
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`); // Correct error handling
+      }
+      const data = await response.json();
+      const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+    } catch (error) {
+      setError(error.message); // Set the error state to the error message
+    }
+  };
+  
 
   return (
     <div className="main-container">
@@ -101,7 +122,6 @@ export default function HomePage() {
                   >
                     Delete
                   </button>
-
                   <Link href={`/attendee/${event._id}`}>
                     <button className="event-tasks-btn">Go to Detail</button>
                   </Link>

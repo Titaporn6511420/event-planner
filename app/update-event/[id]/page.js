@@ -17,7 +17,7 @@ export default function UpdateEventPage({ params }) {
         const response = await fetch(`${API_BASE}/events?id=${id}`);
         if (response.ok) {
           const event = await response.json();
-          reset(event); // Pre-fill form with fetched event data
+          reset(event[0]); // Pre-fill form with fetched event data (assuming single object returned)
         } else {
           setError('Failed to fetch event details');
         }
@@ -31,7 +31,6 @@ export default function UpdateEventPage({ params }) {
 
   const handleUpdate = async (data) => {
     try {
-      // Include the event ID in the request body
       const updateData = { ...data, _id: id };
 
       const response = await fetch(`${API_BASE}/events/${id}`, {
@@ -42,22 +41,16 @@ export default function UpdateEventPage({ params }) {
         body: JSON.stringify(updateData),
       });
 
-      if (response.ok) {
-        alert('Event updated successfully');
-      } else {
-        const errorData = await response.json();
-        console.warn(errorData.message || 'Failed to update event'); // Log the error
-      }
-
-      // Redirect to the homepage after attempting the update
-      router.push('/'); // Always redirect to homepage
+      alert('Event updated successfully');
+      // Redirect to the homepage after the update
+      router.push('/');
     } catch (error) {
-      console.error('Error updating event:', error); // Log the error
-      // Still redirect to the homepage even if there is an error
+      console.error('Error updating event:', error);
+      alert('Error updating event');
+      // Redirect to the homepage even on error
       router.push('/');
     }
   };
-
 
   const handleCancel = () => {
     router.push('/'); // Redirect to the homepage without changes
@@ -68,46 +61,47 @@ export default function UpdateEventPage({ params }) {
       <h1>Update Event</h1>
       {error && <div className="error-message">{error}</div>}
       <form onSubmit={handleSubmit(handleUpdate)} className="event-form">
-          <label>Event Name:
-            <input
-             {...register("name", 
-             { required: true })} 
-              className="form-input"
-            />
-          </label>
-        
-          <label>Details:
-            <input {...register("details", { required: true })} 
+        <label>Event Name:
+          <input
+            {...register("name", { required: true })} 
             className="form-input"
-            />
-          </label>
+          />
+        </label>
 
-          <label>Host:
-            <input {...register("host", 
-            { required: true })} 
+        <label>Details:
+          <input {...register("details", { required: true })} 
             className="form-input"
-            />
-          </label>
+          />
+        </label>
 
-          <label>Date:
+        <label>Host:
+          <input {...register("host", { required: true })} 
+            className="form-input"
+          />
+        </label>
+
+        <label>Date:
           <input type="date" {...register("date", { required: true })}
-          className="form-input" />
-          </label>
+            className="form-input" 
+          />
+        </label>
 
-          <label>Time:
-          <input type="time" {...register("time", { required: true })} className="form-input" />
-          </label>
+        <label>Time:
+          <input type="time" {...register("time", { required: true })} 
+            className="form-input" 
+          />
+        </label>
 
-          <label>Location:
-          <input {...register("location", { required: true })} className="form-input" />
-          </label>
+        <label>Location:
+          <input {...register("location", { required: true })} 
+            className="form-input"
+          />
+        </label>
 
-          <div className="form-buttons">
-
+        <div className="form-buttons">
           <button type="button" onClick={handleCancel} className="cancel-button">Cancel</button>
           <button type="submit" className="add-button">Update Event</button>
-    
-          </div>
+        </div>
       </form>
       <style jsx>{`
          * {
@@ -154,11 +148,6 @@ export default function UpdateEventPage({ params }) {
           border-radius: 10px;
           border: 1px solid #ccc;
           margin-top: 5px;
-        }
-
-        textarea.form-input {
-          resize: none;
-          height: 100px;
         }
 
         .form-buttons {

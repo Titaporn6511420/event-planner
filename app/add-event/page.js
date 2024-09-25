@@ -7,19 +7,19 @@ export default function AddEvent() {
   const [details, setDetails] = useState('');
   const [host, setHost] = useState('');
   const [date, setDate] = useState('');
-  const [time, setTime] = useState(''); // Time as string
+  const [time, setTime] = useState('');
   const [location, setLocation] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Loading state
-  const [error, setError] = useState(null); // Error state
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Start loading
-    setError(null); // Reset error state
+    setIsLoading(true);
+    setError(null);
 
-    const eventData = { name, details, host, date, time, location }; // Include time
+    const eventData = { name, details, host, date, time, location };
 
     try {
       const response = await fetch('/api/events', {
@@ -32,13 +32,13 @@ export default function AddEvent() {
         router.push('/');
       } else {
         const errorData = await response.json();
-        setError(`Error: ${errorData.message}`); // Show error in UI
+        setError(`Error: ${errorData.message}`);
       }
     } catch (error) {
       console.error('Fetch error:', error);
       setError('An unexpected error occurred.');
     } finally {
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     }
   };
 
@@ -46,7 +46,7 @@ export default function AddEvent() {
     <div className="event-form-container">
       <h1>Add New Event</h1>
 
-      {error && <div className="error-message">{error}</div>} {/* Display error message */}
+      {error && <div className="error-message">{error}</div>}
 
       <form onSubmit={handleSubmit} className="event-form">
         <label>
@@ -58,7 +58,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the event's name"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           />
         </label>
         <label>
@@ -70,7 +70,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the host's name"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           />
         </label>
         <label>
@@ -81,7 +81,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the details"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           />
         </label>
         <label>
@@ -92,18 +92,18 @@ export default function AddEvent() {
             onChange={(e) => setDate(e.target.value)}
             required
             className="form-input"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           />
         </label>
         <label>
-          Time: {/* Added time input */}
+          Time:
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
             required
             className="form-input"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           />
         </label>
         <label>
@@ -115,7 +115,7 @@ export default function AddEvent() {
             required
             className="form-input"
             placeholder="Enter the location"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           />
         </label>
         <div className="form-buttons">
@@ -123,14 +123,14 @@ export default function AddEvent() {
             type="button"
             className="cancel-button"
             onClick={() => router.push('/')}
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           >
             Cancel
           </button>
           <button
             type="submit"
             className="add-button"
-            disabled={isLoading} // Disable when loading
+            disabled={isLoading}
           >
             {isLoading ? 'Adding...' : 'Add'}
           </button>
@@ -138,17 +138,13 @@ export default function AddEvent() {
       </form>
 
       <style jsx>{`
-        * {
-          font-family: 'Jost', sans-serif;
-        }
-
         .event-form-container {
           background-color: #fff;
           padding: 30px;
           border-radius: 15px;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          max-width: 400px;
-          margin: 0 auto;
+          max-width: 600px; /* Increased max width for better layout */
+          margin: 20px auto; /* Centered on the page */
         }
 
         h1 {

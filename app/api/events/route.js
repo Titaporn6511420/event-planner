@@ -6,11 +6,11 @@ const client = new MongoClient(uri);
 
 export async function GET(request) {
   try {
+    await client.connect(); // Ensure MongoDB connection is established at the beginning
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const searchTerm = searchParams.get('q');
-
-    await dbConnect(); // Ensure MongoDB connection is established
 
     const events = client.db('event-planner').collection('events');
     let query = {};
@@ -34,17 +34,21 @@ export async function GET(request) {
   } catch (error) {
     console.error('Error in GET method:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+  } finally {
+    await client.close(); // Ensure the client is closed after the request is done
   }
 }
+
 
 
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, details, host, date, time, location } = body; // Include time field
+    const { name, details, host, date, time, location } = body;
 
-    if (!name || !details || !host || !date || !time || !location) { // Validate time
+    // Validate fields
+    if (!name || !details || !host || !date || !time || !location) {
       return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
     }
 
@@ -52,13 +56,13 @@ export async function POST(request) {
     const events = client.db('event-planner').collection('events');
     const result = await events.insertOne(body);
 
-    await client.close();
     return new Response(JSON.stringify({ message: 'Event added', eventId: result.insertedId }), { status: 201 });
   } catch (error) {
     console.error('Error in POST method:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
   }
 }
+
 
 export async function PUT(request, { params }) {
   try {
