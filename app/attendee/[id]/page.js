@@ -44,6 +44,32 @@ export default function AttendeePage({ params }) {
         }
     };
 
+    // Function to save changes and navigate back to the homepage
+    const handleSaveChanges = async () => {
+        try {
+            const response = await fetch(`/api/attendee`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ foodCost, attendees }), // Adjust this to include any necessary attendee data
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Optionally, handle the response if needed
+            const data = await response.json();
+            console.log('Save successful:', data);
+
+            // Navigate back to the homepage
+            router.push('/');
+        } catch (err) {
+            console.error('Error saving changes:', err);
+        }
+    };
+
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
 
@@ -74,7 +100,7 @@ export default function AttendeePage({ params }) {
                 <table className="attendee-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>Attendees Name</th>
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Food Allergies</th>
@@ -88,7 +114,7 @@ export default function AttendeePage({ params }) {
                         ) : (
                             attendees.map(attendee => (
                                 <tr key={attendee._id}>
-                                    <td>{attendee.name}</td>
+                                    <td>{attendee.attendee_name}</td>
                                     <td>{attendee.email}</td>
                                     <td>{attendee.phone}</td>
                                     <td>{attendee.foodAllergies || "None"}</td>
@@ -105,16 +131,23 @@ export default function AttendeePage({ params }) {
                     <p><strong>Total Attendees:</strong> {attendees.length}</p>
                     <div className="food-cost-input">
                         <label htmlFor="food-cost">Food Cost for each:</label>
-                        <input 
-                            type="number" 
-                            id="food-cost" 
-                            value={foodCost} 
-                            onChange={handleFoodCostChange} 
+                        <input
+                            type="number"
+                            id="food-cost"
+                            value={foodCost}
+                            onChange={handleFoodCostChange}
                             className={isNaN(foodCost) || foodCost <= 0 ? "invalid" : "valid"}
                         />
                     </div>
                     <p><strong>Total Food Cost:</strong> {totalFoodCost ? `$${totalFoodCost.toFixed(2)}` : '$0.00'}</p>
                 </div>
+            </div>
+
+            {/* Save Changes Button */}
+            <div className="save-changes-button">
+                <button onClick={handleSaveChanges} className="save-btn">
+                    Save Changes
+                </button>
             </div>
 
             <style jsx>{`
@@ -234,6 +267,25 @@ export default function AttendeePage({ params }) {
                 }
                 .food-cost-input input.valid {
                     border-color: green;
+                }
+
+                /* Save Changes Button Styling */
+                .save-changes-button {
+                    text-align: right;
+                }
+
+                .save-btn {
+                    padding: 10px 20px;
+                    background-color: #6A4BFF;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease;
+                }
+
+                .save-btn:hover {
+                    background-color: #5a3ee6;
                 }
             `}</style>
         </div>

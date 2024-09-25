@@ -12,10 +12,10 @@ export default function AddEvent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const eventData = { name, email, host, number, food };
+    const eventData = { name, email, number, food };
 
     try {
-      const response = await fetch('/api/events', {
+      const response = await fetch('/api/attendee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventData),
@@ -35,7 +35,7 @@ export default function AddEvent() {
 
   return (
     <div className="event-form-container">
-      <h1>Name</h1>
+      <h1>Add Attendee</h1>
       <form onSubmit={handleSubmit} className="event-form">
         <label>
           Name:
@@ -71,7 +71,7 @@ export default function AddEvent() {
           />
         </label>
         <label>
-          Food Aleergies (if any):
+          Food Allergies (if any):
           <input
             type="text"
             value={food}
@@ -82,7 +82,7 @@ export default function AddEvent() {
           />
         </label>
         <div className="form-buttons">
-          <button type="button" className="cancel-button" onClick={() => router.push('/')}>
+          <button type="button" className="cancel-button" onClick={() => router.push('/attendee/${id}')}>
             Cancel
           </button>
           <button type="submit" className="add-button">
