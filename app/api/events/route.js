@@ -1,3 +1,4 @@
+import dbConnect from '@/lib/db'; // Import the db connection function
 import { MongoClient, ObjectId } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
@@ -6,35 +7,37 @@ const client = new MongoClient(uri);
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id'); // Retrieve the event ID
+    const id = searchParams.get('id');
+    const searchTerm = searchParams.get('q');
 
-    await client.connect();
+    await dbConnect(); // Ensure MongoDB connection is established
+
     const events = client.db('event-planner').collection('events');
+    let query = {};
 
     if (id) {
-      // Fetch the specific event by ID
-      const event = await events.findOne({ _id: new ObjectId(id) });
-      if (event) {
-        return new Response(JSON.stringify(event), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      } else {
-        return new Response(JSON.stringify({ message: 'Event not found' }), { status: 404 });
-      }
-    } else {
-      // Fetch all events
-      const eventsList = await events.find({}).toArray();
-      return new Response(JSON.stringify(eventsList), {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      query = { _id: new ObjectId(id) };
+    } else if (searchTerm) {
+      query = {
+        $or: [
+          { name: { $regex: searchTerm, $options: 'i' } },
+          { details: { $regex: searchTerm, $options: 'i' } }
+        ]
+      };
     }
+
+    const eventsList = await events.find(query).toArray();
+
+    return new Response(JSON.stringify(eventsList), {
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Error in GET method:', error);
     return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
-  } finally {
-    await client.close();
   }
 }
+
+
 
 export async function POST(request) {
   try {

@@ -11,11 +11,11 @@ export default function HomePage() {
   useEffect(() => {
     const fetchEvents = async () => {
       let url = `/api/events`;
-
+  
       if (searchTerm.trim()) {
         url += `?q=${encodeURIComponent(searchTerm.trim())}`;
       }
-
+  
       try {
         const response = await fetch(url);
         if (response.ok) {
@@ -29,10 +29,10 @@ export default function HomePage() {
         setError('Error fetching events');
       }
     };
-
+  
     fetchEvents();
-  }, [searchTerm]);
-
+  }, [searchTerm]); // Dependency on searchTerm
+  
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
