@@ -10,23 +10,36 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      let url = "/api/events"; // Corrected URL
+      let url = "/api/events"; // Base URL
 
+      // Append search term if it exists
       if (searchTerm.trim()) {
-        url += `?q=${encodeURIComponent(searchTerm.trim())}`; // Corrected template literal
+        url += `?q=${encodeURIComponent(searchTerm.trim())}`; // Properly encode search term
       }
+
+      // console.log("Fetching events from:", url); // Log the URL being fetched
 
       try {
         const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
-          const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
-          setEvents(sortedEvents);
+
+          // Check if data is empty
+          if (Array.isArray(data) && data.length === 0) {
+            setEvents([]); // No events found
+          } else {
+            const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            setEvents(sortedEvents);
+          }
+          setError(null); // Clear any previous error
         } else {
-          setError(`Failed to fetch events: ${response.status} ${response.statusText}`); // Corrected template literal
+          setError('Failed to fetch events.'); // Set error message for non-200 responses
+          setEvents([]); // Clear events on error
         }
-      } catch (error) {
-        setError('Error fetching events');
+      } catch (fetchError) {
+        console.error('Fetch error:', fetchError);
+        setError('Error fetching events'); // Set error message for fetch failures
+        setEvents([]); // Clear events on fetch error
       }
     };
 
@@ -34,12 +47,13 @@ export default function HomePage() {
   }, [searchTerm]); // Dependency on searchTerm
 
   const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
+    const term = e.target.value;
+    setSearchTerm(term); // Update search term as user types
   };
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch("/api/events", { // Corrected URL
+      const res = await fetch("/api/events", {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -56,27 +70,6 @@ export default function HomePage() {
       setError('Error deleting event');
     }
   };
-
-  const fetchEvents = async () => {
-    let url = "/api/events"; // Corrected URL
-  
-    if (searchTerm.trim()) {
-      url += `?q=${encodeURIComponent(searchTerm.trim())}`; // Corrected template literal
-    }
-  
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch events: ${response.status} ${response.statusText}`); // Correct error handling
-      }
-      const data = await response.json();
-      const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
-      setEvents(sortedEvents);
-    } catch (error) {
-      setError(error.message); // Set the error state to the error message
-    }
-  };
-  
 
   return (
     <div className="main-container">
@@ -107,6 +100,7 @@ export default function HomePage() {
               <div key={event._id} className="event-card">
                 <div className="event-details">
                   <p><strong>Name :</strong> {event.name}</p>
+                  <p><strong>Host :</strong> {event.host}</p>
                   <p><strong>Details :</strong> {event.details}</p>
                   <p><strong>Date :</strong> {new Date(event.date).toLocaleDateString()}</p>
                   <p><strong>Time :</strong> {event.time}</p>

@@ -57,8 +57,8 @@ export default function AttendeePage({ params }) {
                 </div>
                 <div className="nav-links">
                     <button onClick={() => router.push('/')}>Home</button>
-                    <button onClick={() => router.push(`/attendee`)} className="active">Attendees</button>
-                    <button onClick={() => router.push(`/task`)}>Task</button>
+                    <button onClick={() => router.push(`/attendee/${id}`)} className="active">Attendees</button>
+                    <button onClick={() => router.push(`/task/${id}`)}>Task</button>
                 </div>
             </nav>
 
@@ -119,8 +119,8 @@ export default function AttendeePage({ params }) {
 
             <style jsx>{`
                 .attendee-page {
+                    font-family: 'Jost', sans-serif;
                     padding: 20px;
-                    font-family: Arial, sans-serif;
                 }
 
                 /* Header Styling */

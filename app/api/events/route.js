@@ -1,4 +1,3 @@
-import dbConnect from '@/lib/db'; // Import the db connection function
 import { MongoClient, ObjectId } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
@@ -6,70 +5,69 @@ const client = new MongoClient(uri);
 
 export async function GET(request) {
   try {
-    await client.connect(); // Ensure MongoDB connection is established at the beginning
+    console.log('Starting GET request');
+    await client.connect();
+    console.log('Connected to MongoDB');
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const searchTerm = searchParams.get('q');
 
-    const events = client.db('event-planner').collection('events');
+    console.log('ID:', id);
+    console.log('Search Term:', searchTerm);
+
+    const eventsCollection = client.db('event-planner').collection('events');
     let query = {};
 
+    // Check if an ID was provided
     if (id) {
+      console.log('Fetching event by ID:', id);
       query = { _id: new ObjectId(id) };
-    } else if (searchTerm) {
+    } 
+    // Check if a search term was provided and is at least 1 character long
+    else if (searchTerm && searchTerm.trim().length > 0) {
+      if (searchTerm.length < 1) {
+        console.log('Search term too short, returning all events');
+        return new Response(JSON.stringify([]), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('Constructing search query for term:', searchTerm);
       query = {
         $or: [
           { name: { $regex: searchTerm, $options: 'i' } },
           { details: { $regex: searchTerm, $options: 'i' } }
         ]
       };
+    } else {
+      console.log('No search term provided, fetching all events');
     }
 
-    const eventsList = await events.find(query).toArray();
+    console.log('Query:', query);
+
+    // Fetch the events based on the query
+    const eventsList = await eventsCollection.find(query).toArray();
+    console.log('Events fetched:', eventsList);
 
     return new Response(JSON.stringify(eventsList), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in GET method:', error);
-    return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+    console.error('Error in GET method:', error.message);
+    return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.message }), { status: 500 });
   } finally {
-    await client.close(); // Ensure the client is closed after the request is done
+    await client.close();
+    console.log('MongoDB connection closed');
   }
 }
-
-
-
-
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const { name, details, host, date, time, location } = body;
-
-    // Validate fields
-    if (!name || !details || !host || !date || !time || !location) {
-      return new Response(JSON.stringify({ message: 'All fields are required' }), { status: 400 });
-    }
-
-    await client.connect();
-    const events = client.db('event-planner').collection('events');
-    const result = await events.insertOne(body);
-
-    return new Response(JSON.stringify({ message: 'Event added', eventId: result.insertedId }), { status: 201 });
-  } catch (error) {
-    console.error('Error in POST method:', error);
-    return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
-  }
-}
-
 
 export async function PUT(request, { params }) {
   try {
     await client.connect();
-    const events = client.db('event-planner').collection('events');
-    
-    const eventId = params.id; // Make sure this is correctly set from the URL
+    const eventsCollection = client.db('event-planner').collection('events');
+
+    const eventId = params.id; // Ensure this is correctly set from the URL
     console.log('Event ID:', eventId); // Log the event ID
 
     // Check if the ID is a valid ObjectId
@@ -81,7 +79,7 @@ export async function PUT(request, { params }) {
     const { name, details, host, date, time, location } = body;
 
     // Perform update
-    const result = await events.findOneAndUpdate(
+    const result = await eventsCollection.findOneAndUpdate(
       { _id: new ObjectId(eventId) },
       { $set: { name, details, host, date, time, location } },
       { returnDocument: 'after' }
@@ -102,9 +100,6 @@ export async function PUT(request, { params }) {
   }
 }
 
-
-
-
 export async function DELETE(req) {
   try {
     const { id } = await req.json();
@@ -114,10 +109,9 @@ export async function DELETE(req) {
     }
 
     await client.connect();
-    const db = client.db('event-planner');
-    const collection = db.collection('events');
+    const eventsCollection = client.db('event-planner').collection('events');
 
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const result = await eventsCollection.deleteOne({ _id: new ObjectId(id) });
     if (result.deletedCount === 1) {
       return new Response(JSON.stringify({ message: 'Event deleted' }), { status: 200 });
     } else {

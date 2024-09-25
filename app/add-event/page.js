@@ -139,6 +139,7 @@ export default function AddEvent() {
 
       <style jsx>{`
         .event-form-container {
+          font-family: 'Jost', sans-serif;
           background-color: #fff;
           padding: 30px;
           border-radius: 15px;

@@ -6,28 +6,42 @@ const client = new MongoClient(uri);
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
-        const eventId = searchParams.get('eventId'); // Get the event ID from query
-        console.log('Received eventId:', eventId); // Log the eventId
+        const query = searchParams.get('q'); // Get the search query from the URL
 
-        if (!eventId) {
-            return new Response(JSON.stringify({ message: 'Event ID is required' }), { status: 400 });
-        }
+        console.log('Received search query:', query); // Log the search query
 
         await client.connect();
-        const attendees = client.db('event-planner').collection('attendees');
+        console.log('Connected to MongoDB'); // Log connection success
 
-        const attendeesList = await attendees.find({ eventId: new ObjectId(eventId) }).toArray();
-        console.log('Fetched attendees:', attendeesList); // Log fetched attendees
-        return new Response(JSON.stringify(attendeesList), {
+        const eventsCollection = client.db('event-planner').collection('events');
+        console.log('Accessed events collection'); // Log collection access
+
+        let searchCriteria = {};
+        if (query) {
+            searchCriteria = {
+                $or: [
+                    { name: { $regex: query, $options: 'i' } }, // Search by event name
+                    { description: { $regex: query, $options: 'i' } } // Or by description
+                ]
+            };
+        }
+
+        const eventsList = await eventsCollection.find(searchCriteria).toArray();
+        console.log('Fetched events list:', eventsList); // Log fetched events
+
+        return new Response(JSON.stringify(eventsList), {
             headers: { 'Content-Type': 'application/json' },
         });
     } catch (error) {
         console.error('Error in GET method:', error);
-        return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+        return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.message }), { status: 500 });
     } finally {
         await client.close();
+        console.log('MongoDB connection closed'); // Log connection closure
     }
 }
+
+
 
 export async function POST(request) {
     try {
