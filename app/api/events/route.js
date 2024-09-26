@@ -125,3 +125,45 @@ export async function DELETE(req) {
     await client.close();
   }
 }
+
+export async function POST(request) {
+  try {
+    await client.connect();
+    const eventsCollection = client.db('event-planner').collection('events');
+
+    const body = await request.json();
+    const { name, details, host, date, time, location } = body;
+
+    // Validate required fields
+    if (!name || !host || !date || !time || !location) {
+      return new Response(JSON.stringify({ message: 'Missing required fields' }), { status: 400 });
+    }
+
+    // Create new event
+    const newEvent = {
+      name,
+      details,
+      host,
+      date,
+      time,
+      location,
+      createdAt: new Date()
+    };
+
+    const result = await eventsCollection.insertOne(newEvent);
+
+    if (result.acknowledged) {
+      return new Response(JSON.stringify({ 
+        message: 'Event created successfully', 
+        id: result.insertedId 
+      }), { status: 201 });
+    } else {
+      return new Response(JSON.stringify({ message: 'Failed to create event' }), { status: 500 });
+    }
+  } catch (error) {
+    console.error('Error creating event:', error);
+    return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+  } finally {
+    await client.close();
+  }
+}

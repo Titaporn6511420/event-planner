@@ -29,6 +29,8 @@ export default function AddEvent() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        console.log('Event created:', data);
         router.push('/');
       } else {
         const errorData = await response.json();
