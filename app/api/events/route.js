@@ -24,15 +24,8 @@ export async function GET(request) {
       console.log('Fetching event by ID:', id);
       query = { _id: new ObjectId(id) };
     } 
-    // Check if a search term was provided and is at least 1 character long
+    // Check if a search term was provided
     else if (searchTerm && searchTerm.trim().length > 0) {
-      if (searchTerm.length < 1) {
-        console.log('Search term too short, returning all events');
-        return new Response(JSON.stringify([]), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
       console.log('Constructing search query for term:', searchTerm);
       query = {
         $or: [
@@ -44,18 +37,21 @@ export async function GET(request) {
       console.log('No search term provided, fetching all events');
     }
 
-    console.log('Query:', query);
+    console.log('Query:', JSON.stringify(query));
 
     // Fetch the events based on the query
     const eventsList = await eventsCollection.find(query).toArray();
-    console.log('Events fetched:', eventsList);
+    console.log('Events fetched:', eventsList.length);
 
     return new Response(JSON.stringify(eventsList), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in GET method:', error.message);
-    return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.message }), { status: 500 });
+    console.error('Error in GET method:', error);
+    return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.message }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } finally {
     await client.close();
     console.log('MongoDB connection closed');

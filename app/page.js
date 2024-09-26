@@ -19,16 +19,12 @@ export default function HomePage() {
 
       try {
         const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
+        const data = await response.json();
 
-          // Check if data is empty
+        if (response.ok) {
           if (Array.isArray(data) && data.length === 0) {
             setEvents([]); // No events found
           } else {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
-
             const sortedEvents = data.sort((a, b) => {
               const dateA = new Date(a.date);
               const dateB = new Date(b.date);
@@ -49,12 +45,13 @@ export default function HomePage() {
           }
           setError(null); // Clear any previous error
         } else {
-          setError('Failed to fetch events.'); // Set error message for non-200 responses
+          console.error('Server error:', data.message);
+          setError(`Error: ${data.message}`);
           setEvents([]); // Clear events on error
         }
       } catch (fetchError) {
         console.error('Fetch error:', fetchError);
-        setError('Error fetching events'); // Set error message for fetch failures
+        setError('Error fetching events. Please try again.');
         setEvents([]); // Clear events on fetch error
       }
     };
