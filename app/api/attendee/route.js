@@ -60,29 +60,81 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
-    const { foodCost, attendees } = await request.json(); // Adjust this as needed
     try {
         await client.connect();
         const attendeesCollection = client.db('event-planner').collection('attendees');
 
-        // You might want to update food cost in a different manner, 
-        // depending on how you structure your data.
-        // This is just a simple example of how to loop through attendees
-        // and update their food cost (if you have such a field).
+        const body = await request.json();
 
-        const updatePromises = attendees.map(attendee =>
-            attendeesCollection.updateOne(
-                { _id: attendee._id },
-                { $set: { foodCost } } // Adjust this to include relevant fields you want to update
-            )
-        );
+        if (body.eventId && body.foodCost && body.attendees) {
+            // Bulk update for food cost
+            const updatePromises = body.attendees.map(attendee =>
+                attendeesCollection.updateOne(
+                    { _id: new ObjectId(attendee._id) },
+                    { $set: { foodCost: body.foodCost } }
+                )
+            );
 
-        await Promise.all(updatePromises);
+            await Promise.all(updatePromises);
+            return new Response(JSON.stringify({ message: 'Attendees updated successfully' }), { status: 200 });
+        } else if (body._id) {
+            // Individual attendee update
+            const { _id, ...updateData } = body;
+            const result = await attendeesCollection.updateOne(
+                { _id: new ObjectId(_id) },
+                { $set: updateData }
+            );
 
-        return new Response(JSON.stringify({ message: 'Attendees updated successfully' }), { status: 200 });
+            if (result.modifiedCount === 1) {
+                return new Response(JSON.stringify({ message: 'Attendee updated successfully' }), { status: 200 });
+            } else {
+                return new Response(JSON.stringify({ message: 'Attendee not found' }), { status: 404 });
+            }
+        } else {
+            return new Response(JSON.stringify({ message: 'Invalid request data' }), { status: 400 });
+        }
     } catch (error) {
         console.error('Error in PUT method:', error);
         return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+    } finally {
+        await client.close();
+    }
+}
+
+export async function DELETE(request) {
+    try {
+        await client.connect();
+        const attendeesCollection = client.db('event-planner').collection('attendees');
+
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return new Response(JSON.stringify({ message: 'Attendee ID is required' }), { 
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        const result = await attendeesCollection.deleteOne({ _id: new ObjectId(id) });
+
+        if (result.deletedCount === 1) {
+            return new Response(JSON.stringify({ message: 'Attendee deleted successfully' }), { 
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } else {
+            return new Response(JSON.stringify({ message: 'Attendee not found' }), { 
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+    } catch (error) {
+        console.error('Error in DELETE method:', error);
+        return new Response(JSON.stringify({ message: 'Internal Server Error' }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } finally {
         await client.close();
     }

@@ -4,36 +4,41 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AttendeePage({ params }) {
-    const { id } = params; // Get the event ID from URL parameters
+    const { id } = params;
     const [attendees, setAttendees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [foodCost, setFoodCost] = useState(0); // State for food cost per attendee
-    const [totalFoodCost, setTotalFoodCost] = useState(0); // State for total food cost
+    const [foodCost, setFoodCost] = useState(0);
+    const [totalFoodCost, setTotalFoodCost] = useState(0);
+    const [editingAttendee, setEditingAttendee] = useState(null);
 
-    const router = useRouter(); // Hook for programmatic navigation
+    const router = useRouter();
 
     useEffect(() => {
-        const fetchAttendees = async () => {
-            try {
-                const response = await fetch(`/api/attendee?eventId=${id}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                setAttendees(data);
-            } catch (err) {
-                console.error('Error fetching attendees:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchAttendees();
-    }, [id]); // Ensure effect runs when id changes
+    }, [id]);
 
-    // Function to calculate total food cost based on input value
+    const fetchAttendees = async () => {
+        try {
+            const response = await fetch(`/api/attendee?eventId=${id}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setAttendees(data);
+            
+            if (data.length > 0 && data[0].foodCost) {
+                setFoodCost(data[0].foodCost);
+                setTotalFoodCost(data[0].foodCost * data.length);
+            }
+        } catch (err) {
+            console.error('Error fetching attendees:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleFoodCostChange = (e) => {
         const costPerAttendee = parseFloat(e.target.value);
         setFoodCost(costPerAttendee);
@@ -44,29 +49,87 @@ export default function AttendeePage({ params }) {
         }
     };
 
-    // Function to save changes and navigate back to the homepage
     const handleSaveChanges = async () => {
         try {
+            const updatedAttendees = attendees.map(attendee => ({
+                ...attendee,
+                foodCost: foodCost
+            }));
+
             const response = await fetch(`/api/attendee`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ foodCost, attendees }), // Adjust this to include any necessary attendee data
+                body: JSON.stringify({ 
+                    eventId: id,
+                    foodCost, 
+                    attendees: updatedAttendees 
+                }),
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Optionally, handle the response if needed
             const data = await response.json();
             console.log('Save successful:', data);
 
-            // Navigate back to the homepage
-            router.push('/');
+            setAttendees(updatedAttendees);
+            alert('Changes saved successfully!');
         } catch (err) {
             console.error('Error saving changes:', err);
+            alert('Error saving changes: ' + err.message);
+        }
+    };
+
+    const handleEdit = (attendee) => {
+        setEditingAttendee(attendee);
+    };
+
+    const handleDelete = async (attendeeId) => {
+        if (window.confirm('Are you sure you want to delete this attendee?')) {
+            try {
+                const response = await fetch(`/api/attendee?id=${attendeeId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Delete successful:', data);
+
+                setAttendees(attendees.filter(a => a._id !== attendeeId));
+                alert('Attendee deleted successfully!');
+            } catch (err) {
+                console.error('Error deleting attendee:', err);
+                alert('Error deleting attendee: ' + err.message);
+            }
+        }
+    };
+
+    const handleSaveEdit = async (editedAttendee) => {
+        try {
+            const response = await fetch(`/api/attendee`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(editedAttendee),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            setAttendees(attendees.map(a => a._id === editedAttendee._id ? editedAttendee : a));
+            setEditingAttendee(null);
+            alert('Attendee updated successfully!');
+        } catch (err) {
+            console.error('Error updating attendee:', err);
+            alert('Error updating attendee: ' + err.message);
         }
     };
 
@@ -104,20 +167,51 @@ export default function AttendeePage({ params }) {
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Food Allergies</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {attendees.length === 0 ? (
                             <tr>
-                                <td colSpan="4" style={{ textAlign: 'center' }}>No attendees found.</td>
+                                <td colSpan="5" style={{ textAlign: 'center' }}>No attendees found.</td>
                             </tr>
                         ) : (
                             attendees.map(attendee => (
                                 <tr key={attendee._id}>
-                                    <td>{attendee.attendee_name}</td>
-                                    <td>{attendee.email}</td>
-                                    <td>{attendee.phone}</td>
-                                    <td>{attendee.foodAllergies || "None"}</td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.attendee_name} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, attendee_name: e.target.value})}
+                                        /> : attendee.attendee_name}
+                                    </td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.email} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, email: e.target.value})}
+                                        /> : attendee.email}
+                                    </td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.phone} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, phone: e.target.value})}
+                                        /> : attendee.phone}
+                                    </td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.foodAllergies} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, foodAllergies: e.target.value})}
+                                        /> : attendee.foodAllergies || "None"}
+                                    </td>
+                                    <td>
+                                        {editingAttendee?._id === attendee._id ? (
+                                            <button onClick={() => handleSaveEdit(editingAttendee)}>Save</button>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => handleEdit(attendee)}>📝</button>
+                                                <button onClick={() => handleDelete(attendee._id)}>🗑️</button>
+                                            </>
+                                        )}
+                                    </td>
                                 </tr>
                             ))
                         )}
@@ -145,7 +239,10 @@ export default function AttendeePage({ params }) {
 
             {/* Save Changes Button */}
             <div className="save-changes-button">
-                <button onClick={handleSaveChanges} className="save-btn">
+                <button onClick={() => {
+                    handleSaveChanges();
+                    router.push('/');
+                }} className="save-btn">
                     Save Changes
                 </button>
             </div>
@@ -286,6 +383,11 @@ export default function AttendeePage({ params }) {
 
                 .save-btn:hover {
                     background-color: #5a3ee6;
+                }
+
+                .attendee-table button {
+                    margin: 0 5px;
+                    cursor: pointer;
                 }
             `}</style>
         </div>

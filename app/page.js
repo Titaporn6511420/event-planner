@@ -17,8 +17,6 @@ export default function HomePage() {
         url += `?q=${encodeURIComponent(searchTerm.trim())}`; // Properly encode search term
       }
 
-      // console.log("Fetching events from:", url); // Log the URL being fetched
-
       try {
         const response = await fetch(url);
         if (response.ok) {
@@ -28,7 +26,25 @@ export default function HomePage() {
           if (Array.isArray(data) && data.length === 0) {
             setEvents([]); // No events found
           } else {
-            const sortedEvents = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
+            const sortedEvents = data.sort((a, b) => {
+              const dateA = new Date(a.date);
+              const dateB = new Date(b.date);
+              
+              // Compare dates
+              if (dateA.getTime() !== dateB.getTime()) {
+                return dateA.getTime() - dateB.getTime();
+              }
+              
+              // If dates are the same, compare times
+              const timeA = a.time.split(':');
+              const timeB = b.time.split(':');
+              return (parseInt(timeA[0]) * 60 + parseInt(timeA[1])) - 
+                     (parseInt(timeB[0]) * 60 + parseInt(timeB[1]));
+            });
+
             setEvents(sortedEvents);
           }
           setError(null); // Clear any previous error

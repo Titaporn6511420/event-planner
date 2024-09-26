@@ -62,16 +62,17 @@ export async function GET(request) {
   }
 }
 
-export async function PUT(request, { params }) {
+export async function PUT(request) {
   try {
     await client.connect();
     const eventsCollection = client.db('event-planner').collection('events');
 
-    const eventId = params.id; // Ensure this is correctly set from the URL
+    const { searchParams } = new URL(request.url);
+    const eventId = searchParams.get('id');
     console.log('Event ID:', eventId); // Log the event ID
 
     // Check if the ID is a valid ObjectId
-    if (!ObjectId.isValid(eventId)) {
+    if (!eventId || !ObjectId.isValid(eventId)) {
       return new Response(JSON.stringify({ message: 'Invalid Event ID' }), { status: 400 });
     }
 
