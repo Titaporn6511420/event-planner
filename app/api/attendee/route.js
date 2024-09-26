@@ -4,7 +4,9 @@ const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
 export async function POST(request) {
+    let client;
     try {
+        client = new MongoClient(uri);
         await client.connect();
         const db = client.db('event-planner');
         const attendeesCollection = db.collection('attendees');
@@ -13,31 +15,60 @@ export async function POST(request) {
         
         // Validate the data
         if (!attendeeData.eventId || !attendeeData.attendee_name || !attendeeData.email) {
-            return new Response(JSON.stringify({ message: 'Missing required fields' }), { status: 400 });
+            return new Response(JSON.stringify({ message: 'Missing required fields' }), { 
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
 
         // Convert eventId to ObjectId
         attendeeData.eventId = new ObjectId(attendeeData.eventId);
 
+        // Check if an attendee with this email already exists for this event
+        const existingAttendee = await attendeesCollection.findOne({ 
+            eventId: attendeeData.eventId,
+            email: attendeeData.email 
+        });
+
+        if (existingAttendee) {
+            return new Response(JSON.stringify({ message: 'An attendee with this email already exists for this event' }), { 
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         // Get the current food cost for this event
-        const existingAttendee = await attendeesCollection.findOne({ eventId: attendeeData.eventId });
-        if (existingAttendee && existingAttendee.foodCost !== undefined) {
-            attendeeData.foodCost = existingAttendee.foodCost;
+        const eventAttendee = await attendeesCollection.findOne({ eventId: attendeeData.eventId });
+        if (eventAttendee && eventAttendee.foodCost !== undefined) {
+            attendeeData.foodCost = eventAttendee.foodCost;
+        } else {
+            attendeeData.foodCost = 0; // Set a default value if no existing food cost
         }
 
         // Insert the attendee data
         const result = await attendeesCollection.insertOne(attendeeData);
 
         if (result.acknowledged) {
-            return new Response(JSON.stringify({ message: 'Attendee added successfully', id: result.insertedId }), { status: 201 });
+            return new Response(JSON.stringify({ message: 'Attendee added successfully', id: result.insertedId }), { 
+                status: 201,
+                headers: { 'Content-Type': 'application/json' }
+            });
         } else {
-            return new Response(JSON.stringify({ message: 'Failed to add attendee' }), { status: 500 });
+            return new Response(JSON.stringify({ message: 'Failed to add attendee' }), { 
+                status: 500,
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
     } catch (error) {
         console.error('Error in POST /api/attendee:', error);
-        return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+        return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.toString() }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } finally {
-        await client.close();
+        if (client) {
+            await client.close();
+        }
     }
 }
 

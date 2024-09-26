@@ -97,7 +97,7 @@ export default function AttendeePage({ params }) {
             const updatedAttendeesList = attendees.map(a => ({ ...a, foodCost }));
             setAttendees(updatedAttendeesList);
             setTotalFoodCost(foodCost * updatedAttendeesList.length);
-            saveToLocalStorage(updatedAttendeesList, foodCost, foodCost * updatedAttendeesList.length);
+            localStorage.removeItem(`attendees_${id}`); // Clear local storage after saving
             alert('Changes saved successfully!');
         } catch (err) {
             console.error('Error saving changes:', err);

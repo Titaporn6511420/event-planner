@@ -4,21 +4,26 @@ import { useRouter } from 'next/navigation';
 
 export default function AddAttendee({ params }) {
   const { id } = params;
-  const [name, setName] = useState('');
+  const [attendeeName, setAttendeeName] = useState('');
   const [email, setEmail] = useState('');
-  const [number, setNumber] = useState('');
-  const [food, setFood] = useState('');
+  const [phone, setPhone] = useState('');
+  const [foodAllergies, setFoodAllergies] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
     const attendeeData = {
-      eventId: id,  // This is the event ID we're adding the attendee to
-      attendee_name: name,
+      eventId: id,
+      attendee_name: attendeeName,
       email,
-      phone: number,
-      foodAllergies: food
+      phone,
+      foodAllergies
     };
 
     try {
@@ -28,16 +33,33 @@ export default function AddAttendee({ params }) {
         body: JSON.stringify(attendeeData),
       });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 400 && errorData.message.includes('email already exists')) {
+          setError('An attendee with this email already exists for this event. Please use a different email.');
+        } else {
+          setError(`Error: ${errorData.message}`);
+        }
+        return;
+      }
+
       if (response.ok) {
-        // Redirect back to the attendee page
+        console.log('Attendee added:', data);
+        localStorage.removeItem(`attendees_${id}`);
         router.push(`/attendee/${id}`);
       } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
+        setError(`Error: ${data.message}`);
+        if (data.error) {
+          console.error('Detailed error:', data.error);
+        }
       }
     } catch (error) {
       console.error('Fetch error:', error);
-      alert('An unexpected error occurred.');
+      setError('An unexpected error occurred. Please check the console for more details.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -49,8 +71,8 @@ export default function AddAttendee({ params }) {
           Name:
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={attendeeName}
+            onChange={(e) => setAttendeeName(e.target.value)}
             required
             className="form-input"
             placeholder="Enter name"
@@ -71,8 +93,8 @@ export default function AddAttendee({ params }) {
           Phone Number:
           <input
             type="number"
-            value={number}
-            onChange={(e) => setNumber(e.target.value)}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
             className="form-input"
             placeholder="Enter phone no."
@@ -82,8 +104,8 @@ export default function AddAttendee({ params }) {
           Food Allergies (if any):
           <input
             type="text"
-            value={food}
-            onChange={(e) => setFood(e.target.value)}
+            value={foodAllergies}
+            onChange={(e) => setFoodAllergies(e.target.value)}
             required
             className="form-input"
             placeholder="type - if do not have any"
