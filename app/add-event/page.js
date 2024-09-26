@@ -140,26 +140,23 @@ export default function AddEvent() {
       </form>
 
       <style jsx>{`
+        * {
+            font-family: 'Jost', sans-serif;
+        }
+
         .event-form-container {
-          font-family: 'Jost', sans-serif;
           background-color: #fff;
           padding: 30px;
           border-radius: 15px;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          max-width: 600px; /* Increased max width for better layout */
-          margin: 20px auto; /* Centered on the page */
+          max-width: 400px;
+          margin: 0 auto;
         }
 
         h1 {
           text-align: center;
           font-size: 24px;
           margin-bottom: 20px;
-        }
-
-        .error-message {
-          color: red;
-          margin-bottom: 15px;
-          text-align: center;
         }
 
         .event-form {
@@ -181,11 +178,6 @@ export default function AddEvent() {
           border-radius: 10px;
           border: 1px solid #ccc;
           margin-top: 5px;
-        }
-
-        textarea.form-input {
-          resize: none;
-          height: 100px;
         }
 
         .form-buttons {
