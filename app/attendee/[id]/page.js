@@ -91,7 +91,7 @@ export default function AttendeePage({ params }) {
             {/* Attendees Section */}
             <div className="header-with-button">
                 <h1 className="title">Attendees of the event</h1>
-                <button className="add-attendee-btn" onClick={() => router.push('/add-attendee')}>
+                <button className="add-attendee-btn" onClick={() => router.push(`/add-attendee/${id}`)}>
                     + Add New Attendee
                 </button>
             </div>

@@ -1,28 +1,38 @@
 "use client";
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
-export default function AddEvent() {
+export default function AddAttendee() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [number, setNumber] = useState('');
   const [food, setFood] = useState('');
   const router = useRouter();
+  const params = useParams();
+
+  // The id is now directly available from params
+  const id = params.id;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const eventData = { name, email, number, food };
+    const attendeeData = {
+      eventId: id,  // This is the event ID we're adding the attendee to
+      attendee_name: name,
+      email,
+      phone: number,
+      foodAllergies: food
+    };
 
     try {
       const response = await fetch('/api/attendee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventData),
+        body: JSON.stringify(attendeeData),
       });
 
       if (response.ok) {
-        router.push('/');
+        router.push(`/attendee/${id}`);  // Redirect to the attendees list for this event
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message}`);
@@ -62,7 +72,7 @@ export default function AddEvent() {
         <label>
           Phone Number:
           <input
-            type="int"
+            type="number"
             value={number}
             onChange={(e) => setNumber(e.target.value)}
             required
@@ -82,7 +92,11 @@ export default function AddEvent() {
           />
         </label>
         <div className="form-buttons">
-          <button type="button" className="cancel-button" onClick={() => router.push('/attendee/${id}')}>
+          <button
+            type="button"
+            className="cancel-button"
+            onClick={() => id ? router.push(`/attendee/${id}`) : router.push('/attendee')}
+          >
             Cancel
           </button>
           <button type="submit" className="add-button">
@@ -130,11 +144,6 @@ export default function AddEvent() {
           border-radius: 10px;
           border: 1px solid #ccc;
           margin-top: 5px;
-        }
-
-        textarea.form-input {
-          resize: none;
-          height: 100px;
         }
 
         .form-buttons {
