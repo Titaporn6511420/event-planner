@@ -19,6 +19,12 @@ export async function POST(request) {
         // Convert eventId to ObjectId
         attendeeData.eventId = new ObjectId(attendeeData.eventId);
 
+        // Get the current food cost for this event
+        const existingAttendee = await attendeesCollection.findOne({ eventId: attendeeData.eventId });
+        if (existingAttendee && existingAttendee.foodCost !== undefined) {
+            attendeeData.foodCost = existingAttendee.foodCost;
+        }
+
         // Insert the attendee data
         const result = await attendeesCollection.insertOne(attendeeData);
 

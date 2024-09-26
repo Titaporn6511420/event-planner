@@ -20,16 +20,29 @@ export default function AttendeePage({ params }) {
 
     const fetchAttendees = async () => {
         try {
+            setLoading(true);
             const response = await fetch(`/api/attendee?eventId=${id}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            setAttendees(data);
             
-            if (data.length > 0 && data[0].foodCost) {
-                setFoodCost(data[0].foodCost);
-                setTotalFoodCost(data[0].foodCost * data.length);
+            // Check if there's saved data in localStorage
+            const savedData = localStorage.getItem(`attendees_${id}`);
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                setAttendees(parsedData.attendees);
+                setFoodCost(parsedData.foodCost);
+                setTotalFoodCost(parsedData.totalFoodCost);
+            } else {
+                setAttendees(data);
+                if (data.length > 0 && data[0].foodCost !== undefined) {
+                    setFoodCost(data[0].foodCost);
+                    setTotalFoodCost(data[0].foodCost * data.length);
+                } else {
+                    setFoodCost(0);
+                    setTotalFoodCost(0);
+                }
             }
         } catch (err) {
             console.error('Error fetching attendees:', err);
@@ -42,11 +55,12 @@ export default function AttendeePage({ params }) {
     const handleFoodCostChange = (e) => {
         const costPerAttendee = parseFloat(e.target.value);
         setFoodCost(costPerAttendee);
-        if (!isNaN(costPerAttendee)) {
+        if (!isNaN(costPerAttendee) && costPerAttendee >= 0) {
             setTotalFoodCost(costPerAttendee * attendees.length);
         } else {
             setTotalFoodCost(0);
         }
+        saveToLocalStorage(attendees, costPerAttendee, costPerAttendee * attendees.length);
     };
 
     const handleSaveChanges = async () => {
@@ -72,18 +86,18 @@ export default function AttendeePage({ params }) {
                 body: JSON.stringify(requestBody),
             });
 
-            const responseText = await response.text();
-            console.log('Response status:', response.status);
-            console.log('Response text:', responseText);
-
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
-            const data = JSON.parse(responseText);
+            const data = await response.json();
             console.log('Save successful:', data);
 
-            setAttendees(attendees.map(a => ({ ...a, foodCost })));
+            const updatedAttendeesList = attendees.map(a => ({ ...a, foodCost }));
+            setAttendees(updatedAttendeesList);
+            setTotalFoodCost(foodCost * updatedAttendeesList.length);
+            saveToLocalStorage(updatedAttendeesList, foodCost, foodCost * updatedAttendeesList.length);
             alert('Changes saved successfully!');
         } catch (err) {
             console.error('Error saving changes:', err);
@@ -109,7 +123,10 @@ export default function AttendeePage({ params }) {
                 const data = await response.json();
                 console.log('Delete successful:', data);
 
-                setAttendees(attendees.filter(a => a._id !== attendeeId));
+                const updatedAttendees = attendees.filter(a => a._id !== attendeeId);
+                setAttendees(updatedAttendees);
+                setTotalFoodCost(foodCost * updatedAttendees.length);
+                saveToLocalStorage(updatedAttendees, foodCost, foodCost * updatedAttendees.length);
                 alert('Attendee deleted successfully!');
             } catch (err) {
                 console.error('Error deleting attendee:', err);
@@ -126,29 +143,35 @@ export default function AttendeePage({ params }) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    eventId: id,
                     attendee: editedAttendee
                 }),
             });
 
-            const responseText = await response.text();
-            console.log('Response status:', response.status);
-            console.log('Response text:', responseText);
-
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
-            const data = JSON.parse(responseText);
+            const data = await response.json();
             console.log('Update successful:', data);
 
-            setAttendees(attendees.map(a => a._id === editedAttendee._id ? editedAttendee : a));
+            const updatedAttendees = attendees.map(a => a._id === editedAttendee._id ? editedAttendee : a);
+            setAttendees(updatedAttendees);
             setEditingAttendee(null);
+            saveToLocalStorage(updatedAttendees, foodCost, totalFoodCost);
             alert('Attendee updated successfully!');
         } catch (err) {
             console.error('Error updating attendee:', err);
             alert('Error updating attendee: ' + err.message);
         }
+    };
+
+    const saveToLocalStorage = (attendeesList, cost, total) => {
+        localStorage.setItem(`attendees_${id}`, JSON.stringify({
+            attendees: attendeesList,
+            foodCost: cost,
+            totalFoodCost: total
+        }));
     };
 
     if (loading) return <p>Loading...</p>;
@@ -172,7 +195,9 @@ export default function AttendeePage({ params }) {
             {/* Attendees Section */}
             <div className="header-with-button">
                 <h1 className="title">Attendees of the event</h1>
-                <button className="add-attendee-btn" onClick={() => router.push(`/add-attendee/${id}`)}>
+                <button className="add-attendee-btn" onClick={() => {
+                    router.push(`/add-attendee/${id}`);
+                }}>
                     + Add New Attendee
                 </button>
             </div>
@@ -218,7 +243,7 @@ export default function AttendeePage({ params }) {
                                         <input 
                                             value={editingAttendee.foodAllergies} 
                                             onChange={(e) => setEditingAttendee({...editingAttendee, foodAllergies: e.target.value})}
-                                        /> : attendee.foodAllergies || "None"}
+                                        /> : attendee.foodAllergies || "-"}
                                     </td>
                                     <td>
                                         {editingAttendee?._id === attendee._id ? (

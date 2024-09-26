@@ -1,17 +1,14 @@
 "use client";
 import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
-export default function AddAttendee() {
+export default function AddAttendee({ params }) {
+  const { id } = params;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [number, setNumber] = useState('');
   const [food, setFood] = useState('');
   const router = useRouter();
-  const params = useParams();
-
-  // The id is now directly available from params
-  const id = params.id;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +29,8 @@ export default function AddAttendee() {
       });
 
       if (response.ok) {
-        router.push(`/attendee/${id}`);  // Redirect to the attendees list for this event
+        // Redirect back to the attendee page
+        router.push(`/attendee/${id}`);
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message}`);
@@ -95,7 +93,7 @@ export default function AddAttendee() {
           <button
             type="button"
             className="cancel-button"
-            onClick={() => id ? router.push(`/attendee/${id}`) : router.push('/attendee')}
+            onClick={() => router.push(`/attendee/${id}`)}
           >
             Cancel
           </button>
