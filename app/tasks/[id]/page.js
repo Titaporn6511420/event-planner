@@ -1,77 +1,149 @@
 "use client"; // Indicate that this is a client-side component
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function TaskPage({ params }) {
     const { id } = params; // Get the event ID from URL parameters
-    const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
     const router = useRouter(); // Hook for programmatic navigation
 
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await fetch(`/api/task?eventId=${id}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                setTasks(data);
-            } catch (err) {
-                console.error('Error fetching tasks:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchTasks();
-    }, [id]); // Ensure effect runs when id changes
-
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error}</p>;
-
     return (
-        <div>
-            {/* Navigation Bar */}
-            <nav style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ccc' }}>
-                <button onClick={() => router.push('/')} style={{ marginRight: '10px' }}>Home</button>
-                <button onClick={() => router.push(`/attendee/${id}`)}>Attendees</button>
-                <button onClick={() => router.push(`/task/add?id=${id}`)}>Add New Task</button>
+        <div className="task-page">
+            {/* Header Navigation */}
+            <nav className="navbar">
+                <div className="logo">
+                    <span className="logo-event">Event</span>
+                    <span className="logo-planner">Planner.</span>
+                </div>
+                <div className="nav-links">
+                    <button onClick={() => router.push('/')}>Home</button>
+                    <button onClick={() => router.push(`/attendee/${id}`)}>Attendees</button>
+                    <button onClick={() => router.push(`/tasks/${id}`)} className="active">Tasks</button>
+                </div>
             </nav>
 
-            <h1>Tasks for Event {id}</h1>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Task Name</th>
-                        <th>Description</th>
-                        <th>Assigned To</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {tasks.length === 0 ? (
+            {/* Task Section */}
+            <div className="tasks-header">
+                <h2>Track Tasks</h2>
+                <button className="add-task-btn">+ Add new task</button>
+            </div>
+
+            <div className="tasks-table">
+                <table>
+                    <thead>
                         <tr>
-                            <td colSpan="4" style={{ textAlign: 'center' }}>
-                                No tasks found.
-                            </td>
+                            <th>Task name</th>
+                            <th>Details</th>
+                            <th>Time</th>
                         </tr>
-                    ) : (
-                        tasks.map(task => (
-                            <tr key={task._id}>
-                                <td>{task.name}</td>
-                                <td>{task.description}</td>
-                                <td>{task.assignedTo}</td>
-                                <td>{task.status}</td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {/* Dynamic task rows go here */}
+                    </tbody>
+                </table>
+            </div>
+
+            <style jsx>{`
+                .task-page {
+                    font-family: 'Jost', sans-serif;
+                    padding: 20px;
+                }
+
+                /* Header Styling */
+                .navbar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px;
+                    background-color: #f8f8f8;
+                    border-radius: 0 0 20px 20px;
+                    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+                    margin-bottom: 20px;
+                }
+                .logo {
+                    display: flex;
+                    align-items: center;
+                }
+                .logo-event {
+                    font-weight: bold;
+                    font-size: 24px;
+                    color: #6A4BFF;
+                }
+                .logo-planner {
+                    font-weight: 600;
+                    font-size: 24px;
+                    color: #333;
+                    margin-left: 5px;
+                }
+                .nav-links {
+                    display: flex;
+                    gap: 20px;
+                }
+                .nav-links button {
+                    background: none;
+                    border: none;
+                    font-size: 16px;
+                    cursor: pointer;
+                    color: #333;
+                }
+                .nav-links button.active {
+                    color: #6A4BFF;
+                }
+                .nav-links button:hover {
+                    text-decoration: underline;
+                }
+
+                /* Task Header and Table Styling */
+                .tasks-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                }
+                .tasks-header h2 {
+                    font-size: 24px;
+                    font-weight: 600;
+                }
+                .add-task-btn {
+                    background-color: #6A4BFF;
+                    color: white;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                }
+                .add-task-btn:hover {
+                    background-color: #5a3fd1;
+                }
+
+                .tasks-table {
+                    border-radius: 20px;
+                    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+                    padding: 20px;
+                    background-color: #fff;
+                }
+                .tasks-table h3 {
+                    margin-bottom: 10px;
+                    font-size: 18px;
+                    font-weight: 500;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 10px;
+                }
+                th, td {
+                    text-align: left;
+                    padding: 12px;
+                }
+                th {
+                    font-weight: bold;
+                    background-color: #f9f9f9;
+                }
+                tr:nth-child(even) {
+                    background-color: #f2f2f2;
+                }
+            `}</style>
         </div>
     );
 }

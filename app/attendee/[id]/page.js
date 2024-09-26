@@ -165,7 +165,7 @@ export default function AttendeePage({ params }) {
                 <div className="nav-links">
                     <button onClick={() => router.push('/')}>Home</button>
                     <button onClick={() => router.push(`/attendee/${id}`)} className="active">Attendees</button>
-                    <button onClick={() => router.push(`/task/${id}`)}>Task</button>
+                    <button onClick={() => router.push(`/tasks/${id}`)}>Tasks</button>
                 </div>
             </nav>
 
