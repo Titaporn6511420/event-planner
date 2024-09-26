@@ -52,30 +52,38 @@ export default function AttendeePage({ params }) {
     const handleSaveChanges = async () => {
         try {
             const updatedAttendees = attendees.map(attendee => ({
-                ...attendee,
+                _id: attendee._id,
                 foodCost: foodCost
             }));
+
+            const requestBody = { 
+                eventId: id,
+                foodCost, 
+                attendees: updatedAttendees 
+            };
+
+            console.log('Request body:', JSON.stringify(requestBody, null, 2));
 
             const response = await fetch(`/api/attendee`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    eventId: id,
-                    foodCost, 
-                    attendees: updatedAttendees 
-                }),
+                body: JSON.stringify(requestBody),
             });
 
+            const responseText = await response.text();
+            console.log('Response status:', response.status);
+            console.log('Response text:', responseText);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
             }
 
-            const data = await response.json();
+            const data = JSON.parse(responseText);
             console.log('Save successful:', data);
 
-            setAttendees(updatedAttendees);
+            setAttendees(attendees.map(a => ({ ...a, foodCost })));
             alert('Changes saved successfully!');
         } catch (err) {
             console.error('Error saving changes:', err);
@@ -117,12 +125,22 @@ export default function AttendeePage({ params }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(editedAttendee),
+                body: JSON.stringify({
+                    eventId: id,
+                    attendee: editedAttendee
+                }),
             });
 
+            const responseText = await response.text();
+            console.log('Response status:', response.status);
+            console.log('Response text:', responseText);
+
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${responseText}`);
             }
+
+            const data = JSON.parse(responseText);
+            console.log('Update successful:', data);
 
             setAttendees(attendees.map(a => a._id === editedAttendee._id ? editedAttendee : a));
             setEditingAttendee(null);
