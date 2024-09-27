@@ -1,6 +1,7 @@
 "use client"; // Indicate that this is a client-side component
 
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function TaskPage({ params }) {
     const { id } = params; // Get the event ID from URL parameters
@@ -24,7 +25,9 @@ export default function TaskPage({ params }) {
             {/* Task Section */}
             <div className="tasks-header">
                 <h2>Track Tasks</h2>
-                <button className="add-task-btn">+ Add new task</button>
+                <Link href={`/add-task/${id}`}>
+                    <button className="add-task-btn">+ Add new task</button>
+                </Link>
             </div>
 
             <div className="tasks-table">
@@ -111,6 +114,7 @@ export default function TaskPage({ params }) {
                     border-radius: 8px;
                     cursor: pointer;
                     font-size: 16px;
+                    transition: background-color 0.3s ease;
                 }
                 .add-task-btn:hover {
                     background-color: #5a3fd1;
