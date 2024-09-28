@@ -19,7 +19,8 @@ export async function GET(request) {
             });
         }
 
-        const tasks = await tasksCollection.find({ eventId: new ObjectId(eventId) }).toArray();
+        const tasks = await tasksCollection.find({ eventId: eventId }).toArray();
+        console.log('Fetched tasks for eventId:', eventId, tasks); // Add this line for debugging
 
         return new Response(JSON.stringify(tasks), { 
             status: 200,
@@ -52,14 +53,13 @@ export async function POST(request) {
             });
         }
 
-        // Convert eventId to ObjectId
-        taskData.eventId = new ObjectId(taskData.eventId);
-
         // Insert the task data
         const result = await tasksCollection.insertOne(taskData);
 
         if (result.acknowledged) {
-            return new Response(JSON.stringify({ message: 'Task added successfully', id: result.insertedId }), { 
+            const newTask = await tasksCollection.findOne({ _id: result.insertedId });
+            console.log('Inserted new task:', newTask); // Add this line for debugging
+            return new Response(JSON.stringify(newTask), { 
                 status: 201,
                 headers: { 'Content-Type': 'application/json' }
             });
