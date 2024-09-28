@@ -143,7 +143,6 @@ export async function POST(request) {
       date,
       time,
       location,
-      createdAt: new Date()
     };
 
     const result = await eventsCollection.insertOne(newEvent);

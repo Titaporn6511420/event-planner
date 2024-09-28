@@ -2,10 +2,53 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function TaskPage({ params }) {
     const { id } = params; // Get the event ID from URL parameters
     const router = useRouter(); // Hook for programmatic navigation
+    const [tasks, setTasks] = useState([]);
+
+    useEffect(() => {
+        fetchTasks();
+    }, [id]);
+
+    const fetchTasks = async () => {
+        try {
+            const response = await fetch(`/api/tasks?eventId=${id}`);
+            if (response.ok) {
+                const data = await response.json();
+                setTasks(data);
+            } else {
+                console.error('Failed to fetch tasks');
+            }
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+        }
+    };
+
+    const handleEdit = (taskId) => {
+        // Navigate to an edit page or open a modal for editing
+        router.push(`/edit-task/${id}/${taskId}`);
+    };
+
+    const handleDelete = async (taskId) => {
+        if (confirm('Are you sure you want to delete this task?')) {
+            try {
+                const response = await fetch(`/api/tasks?id=${taskId}`, {
+                    method: 'DELETE',
+                });
+                if (response.ok) {
+                    // Refresh the task list
+                    fetchTasks();
+                } else {
+                    console.error('Failed to delete task');
+                }
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
+    };
 
     return (
         <div className="task-page">
@@ -37,10 +80,21 @@ export default function TaskPage({ params }) {
                             <th>Task name</th>
                             <th>Details</th>
                             <th>Time</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {/* Dynamic task rows go here */}
+                        {tasks.map((task) => (
+                            <tr key={task._id}>
+                                <td>{task.task_name}</td>
+                                <td>{task.detail}</td>
+                                <td>{task.time}</td>
+                                <td>
+                                    <button onClick={() => handleEdit(task._id)}>📝</button>
+                                    <button onClick={() => handleDelete(task._id)}>🗑️</button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
@@ -146,6 +200,28 @@ export default function TaskPage({ params }) {
                 }
                 tr:nth-child(even) {
                     background-color: #f2f2f2;
+                }
+
+                .edit-btn, .delete-btn {
+                    padding: 5px 10px;
+                    margin: 0 5px;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+
+                .edit-btn {
+                    background-color: #4CAF50;
+                    color: white;
+                }
+
+                .delete-btn {
+                    background-color: #f44336;
+                    color: white;
+                }
+
+                .edit-btn:hover, .delete-btn:hover {
+                    opacity: 0.8;
                 }
             `}</style>
         </div>
