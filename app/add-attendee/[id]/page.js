@@ -27,6 +27,7 @@ export default function AddAttendee({ params }) {
     };
 
     try {
+      console.log('Sending attendee data:', attendeeData);
       const response = await fetch('/api/attendee', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,30 +35,20 @@ export default function AddAttendee({ params }) {
       });
 
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 400 && errorData.message.includes('email already exists')) {
-          setError('An attendee with this email already exists for this event. Please use a different email.');
-        } else {
-          setError(`Error: ${errorData.message}`);
-        }
-        return;
+        throw new Error(data.message || 'Failed to add attendee');
       }
 
-      if (response.ok) {
-        console.log('Attendee added:', data);
-        localStorage.removeItem(`attendees_${id}`);
-        router.push(`/attendee/${id}`);
-      } else {
-        setError(`Error: ${data.message}`);
-        if (data.error) {
-          console.error('Detailed error:', data.error);
-        }
-      }
+      console.log('Attendee added:', data);
+      
+      // Navigate back to the attendee page
+      router.push(`/attendee/${id}`);
     } catch (error) {
-      console.error('Fetch error:', error);
-      setError('An unexpected error occurred. Please check the console for more details.');
+      console.error('Error adding attendee:', error);
+      setError(error.message);
+      // You might want to show this error to the user in your UI
     } finally {
       setIsLoading(false);
     }

@@ -21,14 +21,25 @@ export default function TaskPage({ params }) {
             const response = await fetch(`/api/tasks?eventId=${id}`);
             if (response.ok) {
                 const data = await response.json();
-                console.log('Fetched tasks:', data); // Add this line for debugging
-                setTasks(data);
+                console.log('Fetched tasks:', data);
+                const sortedTasks = sortTasksByTime(data);
+                setTasks(sortedTasks);
             } else {
                 console.error('Failed to fetch tasks');
             }
         } catch (error) {
             console.error('Error fetching tasks:', error);
         }
+    };
+
+    const sortTasksByTime = (tasks) => {
+        return tasks.sort((a, b) => {
+            const timeA = a.time.toLowerCase();
+            const timeB = b.time.toLowerCase();
+            if (timeA < timeB) return -1;
+            if (timeA > timeB) return 1;
+            return 0;
+        });
     };
 
     const handleEdit = (task) => {
@@ -86,8 +97,8 @@ export default function TaskPage({ params }) {
             });
             if (response.ok) {
                 const addedTask = await response.json();
-                console.log('Added task:', addedTask); // Add this line for debugging
-                setTasks(prevTasks => [...prevTasks, addedTask]);
+                console.log('Added task:', addedTask);
+                setTasks(prevTasks => sortTasksByTime([...prevTasks, addedTask]));
                 setNewTask({ task_name: '', detail: '', time: '' });
                 setIsAddingTask(false);
             } else {
@@ -96,6 +107,10 @@ export default function TaskPage({ params }) {
         } catch (error) {
             console.error('Error adding new task:', error);
         }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingTask(null);
     };
 
     return (
@@ -188,7 +203,10 @@ export default function TaskPage({ params }) {
                                 </td>
                                 <td>
                                     {editingTask?._id === task._id ? (
-                                        <button onClick={handleUpdate}>Save</button>
+                                        <>
+                                            <button onClick={handleUpdate}>Save</button>
+                                            <button onClick={handleCancelEdit} className='delete-btn'>Cancel</button>
+                                        </>
                                     ) : (
                                         <>
                                             <button onClick={() => handleEdit(task)}>📝</button>

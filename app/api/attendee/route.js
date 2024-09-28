@@ -8,13 +8,17 @@ export async function POST(request) {
     try {
         client = new MongoClient(uri);
         await client.connect();
+        console.log('Connected to MongoDB');
+
         const db = client.db('event-planner');
         const attendeesCollection = db.collection('attendees');
 
         const attendeeData = await request.json();
+        console.log('Received attendee data:', attendeeData);
         
         // Validate the data
         if (!attendeeData.eventId || !attendeeData.attendee_name || !attendeeData.email) {
+            console.log('Missing required fields');
             return new Response(JSON.stringify({ message: 'Missing required fields' }), { 
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
@@ -22,16 +26,11 @@ export async function POST(request) {
         }
 
         // Convert eventId to ObjectId
-        attendeeData.eventId = new ObjectId(attendeeData.eventId);
-
-        // Check if an attendee with this email already exists for this event
-        const existingAttendee = await attendeesCollection.findOne({ 
-            eventId: attendeeData.eventId,
-            email: attendeeData.email 
-        });
-
-        if (existingAttendee) {
-            return new Response(JSON.stringify({ message: 'An attendee with this email already exists for this event' }), { 
+        try {
+            attendeeData.eventId = new ObjectId(attendeeData.eventId);
+        } catch (error) {
+            console.log('Invalid eventId:', attendeeData.eventId);
+            return new Response(JSON.stringify({ message: 'Invalid eventId' }), { 
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -45,15 +44,19 @@ export async function POST(request) {
             attendeeData.foodCost = 0; // Set a default value if no existing food cost
         }
 
+        console.log('Inserting attendee data:', attendeeData);
+
         // Insert the attendee data
         const result = await attendeesCollection.insertOne(attendeeData);
 
         if (result.acknowledged) {
+            console.log('Attendee added successfully');
             return new Response(JSON.stringify({ message: 'Attendee added successfully', id: result.insertedId }), { 
                 status: 201,
                 headers: { 'Content-Type': 'application/json' }
             });
         } else {
+            console.log('Failed to add attendee');
             return new Response(JSON.stringify({ message: 'Failed to add attendee' }), { 
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
@@ -68,13 +71,18 @@ export async function POST(request) {
     } finally {
         if (client) {
             await client.close();
+            console.log('MongoDB connection closed');
         }
     }
 }
 
 export async function GET(request) {
+    let client;
     try {
+        client = new MongoClient(uri);
         await client.connect();
+        console.log('Connected to MongoDB');
+
         const db = client.db('event-planner');
         const attendeesCollection = db.collection('attendees');
 
@@ -85,14 +93,27 @@ export async function GET(request) {
             return new Response(JSON.stringify({ message: 'Event ID is required' }), { status: 400 });
         }
 
+        console.log('Querying for eventId:', eventId);
+
         const attendees = await attendeesCollection.find({ eventId: new ObjectId(eventId) }).toArray();
 
-        return new Response(JSON.stringify(attendees), { status: 200 });
+        console.log('Found attendees:', attendees);
+
+        return new Response(JSON.stringify(attendees), { 
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } catch (error) {
         console.error('Error in GET /api/attendee:', error);
-        return new Response(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 });
+        return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.toString() }), { 
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     } finally {
-        await client.close();
+        if (client) {
+            await client.close();
+            console.log('MongoDB connection closed');
+        }
     }
 }
 
@@ -123,22 +144,7 @@ export async function PUT(request) {
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
-        } else if (body.eventId && body.foodCost !== undefined && Array.isArray(body.attendees)) {
-            // Bulk update for food cost
-            const updatePromises = body.attendees.map(attendee =>
-                attendeesCollection.updateOne(
-                    { _id: new ObjectId(attendee._id) },
-                    { $set: { foodCost: body.foodCost } }
-                )
-            );
-
-            await Promise.all(updatePromises);
-            return new Response(JSON.stringify({ message: 'Attendees updated successfully' }), { 
-                status: 200,
-                headers: { 'Content-Type': 'application/json' }
-            });
         } else {
-            console.log('Invalid request data:', JSON.stringify(body, null, 2));
             return new Response(JSON.stringify({ message: 'Invalid request data' }), { 
                 status: 400,
                 headers: { 'Content-Type': 'application/json' }

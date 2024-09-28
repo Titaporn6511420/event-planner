@@ -25,22 +25,7 @@ export default function HomePage() {
           if (Array.isArray(data) && data.length === 0) {
             setEvents([]); // No events found
           } else {
-            const sortedEvents = data.sort((a, b) => {
-              const dateA = new Date(a.date);
-              const dateB = new Date(b.date);
-              
-              // Compare dates
-              if (dateA.getTime() !== dateB.getTime()) {
-                return dateA.getTime() - dateB.getTime();
-              }
-              
-              // If dates are the same, compare times
-              const timeA = a.time.split(':');
-              const timeB = b.time.split(':');
-              return (parseInt(timeA[0]) * 60 + parseInt(timeA[1])) - 
-                     (parseInt(timeB[0]) * 60 + parseInt(timeB[1]));
-            });
-
+            const sortedEvents = sortEventsByDateAndTime(data);
             setEvents(sortedEvents);
           }
           setError(null); // Clear any previous error
@@ -58,6 +43,24 @@ export default function HomePage() {
 
     fetchEvents();
   }, [searchTerm]); // Dependency on searchTerm
+
+  const sortEventsByDateAndTime = (events) => {
+    const now = new Date();
+    return events.sort((a, b) => {
+      const dateA = new Date(a.date + 'T' + a.time);
+      const dateB = new Date(b.date + 'T' + b.time);
+      
+      // Check if events are in the past
+      const isPastA = dateA < now;
+      const isPastB = dateB < now;
+
+      if (isPastA && !isPastB) return 1;  // a is past, b is future
+      if (!isPastA && isPastB) return -1; // a is future, b is past
+      
+      // If both are past or both are future, sort normally
+      return dateA - dateB;
+    });
+  };
 
   const handleSearch = (e) => {
     const term = e.target.value;
