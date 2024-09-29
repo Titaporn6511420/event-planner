@@ -11,7 +11,7 @@ Event Planner is a web application built with Next.js that allows users to creat
 # Getting Started
 ## Prerequisites
 - Node.js (v14 or later)
-- npm or yarn
+- pnpm
 - MongoDB database
 ## Installation
 1. Clone the repository:
