@@ -43,7 +43,7 @@ The application uses API routes for server-side operations:
 
 ## Deployment
 Vercel Platform
-https://event-planner-ej22j3vjf-tammys-projects-27bff018.vercel.app/
+https://event-planner-vert.vercel.app/
 
 ## Created by
 - Titaporn Tienanansuk Github:https://github.com/Titaporn6511420
