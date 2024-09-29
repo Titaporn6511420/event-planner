@@ -13,6 +13,10 @@ export async function POST(request) {
         const db = client.db('event-planner');
         const attendeesCollection = db.collection('attendees');
 
+        // List all indexes before insertion
+        const indexesBefore = await attendeesCollection.indexes();
+        console.log('Indexes before insertion:', indexesBefore);
+
         const attendeeData = await request.json();
         console.log('Received attendee data:', attendeeData);
         
@@ -36,29 +40,6 @@ export async function POST(request) {
             });
         }
 
-        // Check if an attendee with this email already exists for this event
-        const existingAttendee = await attendeesCollection.findOne({ 
-            eventId: attendeeData.eventId, 
-            email: attendeeData.email 
-        });
-
-        if (existingAttendee) {
-            return new Response(JSON.stringify({ message: 'An attendee with this email already exists for this event' }), { 
-                status: 400,
-                headers: { 'Content-Type': 'application/json' }
-            });
-        }
-
-        // Get the current food cost for this event
-        const eventAttendee = await attendeesCollection.findOne({ eventId: attendeeData.eventId });
-        if (eventAttendee && eventAttendee.foodCost !== undefined) {
-            attendeeData.foodCost = eventAttendee.foodCost;
-        } else {
-            attendeeData.foodCost = 0; // Set a default value if no existing food cost
-        }
-
-        console.log('Inserting attendee data:', attendeeData);
-
         // Insert the attendee data
         const result = await attendeesCollection.insertOne(attendeeData);
 
@@ -77,6 +58,19 @@ export async function POST(request) {
         }
     } catch (error) {
         console.error('Error in POST /api/attendee:', error);
+        if (error.code === 11000) {
+            // This is a duplicate key error
+            const indexes = await client.db('event-planner').collection('attendees').indexes();
+            console.log('Current indexes:', indexes);
+            return new Response(JSON.stringify({ 
+                message: 'Duplicate email detected',
+                error: error.toString(),
+                indexes: indexes
+            }), { 
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
         return new Response(JSON.stringify({ message: 'Internal Server Error', error: error.toString() }), { 
             status: 500,
             headers: { 'Content-Type': 'application/json' }
@@ -101,6 +95,33 @@ export async function GET(request) {
 
         const { searchParams } = new URL(request.url);
         const eventId = searchParams.get('eventId');
+        const action = searchParams.get('action');
+
+        if (action === 'manageIndexes') {
+            // List all indexes
+            const indexes = await attendeesCollection.indexes();
+            console.log('Current indexes:', indexes);
+
+            // Drop all non-_id indexes
+            for (const index of indexes) {
+                if (index.name !== '_id_') {
+                    await attendeesCollection.dropIndex(index.name);
+                    console.log(`Dropped index: ${index.name}`);
+                }
+            }
+
+            // List indexes again to confirm
+            const updatedIndexes = await attendeesCollection.indexes();
+
+            return new Response(JSON.stringify({ 
+                message: 'Index management complete',
+                originalIndexes: indexes,
+                updatedIndexes: updatedIndexes
+            }), { 
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
 
         if (!eventId) {
             return new Response(JSON.stringify({ message: 'Event ID is required' }), { status: 400 });
@@ -135,7 +156,10 @@ export async function PUT(request) {
     try {
         client = new MongoClient(uri);
         await client.connect();
-        const attendeesCollection = client.db('event-planner').collection('attendees');
+        console.log('Connected to MongoDB');
+
+        const db = client.db('event-planner');
+        const attendeesCollection = db.collection('attendees');
 
         const body = await request.json();
         console.log('Received body:', JSON.stringify(body, null, 2));
@@ -165,6 +189,34 @@ export async function PUT(request) {
                     headers: { 'Content-Type': 'application/json' }
                 });
             }
+        } else if (body.eventId && body.foodCost && body.attendees) {
+            // Bulk update for food cost
+            const { eventId, foodCost, attendees } = body;
+            console.log('Updating food cost for event:', eventId);
+            console.log('New food cost:', foodCost);
+
+            const bulkOps = attendees.map(attendee => ({
+                updateOne: {
+                    filter: { _id: new ObjectId(attendee._id) },
+                    update: { $set: { foodCost: foodCost } }
+                }
+            }));
+
+            const result = await attendeesCollection.bulkWrite(bulkOps);
+
+            console.log('Bulk update result:', result);
+
+            if (result.modifiedCount > 0) {
+                return new Response(JSON.stringify({ message: 'Food cost updated successfully', modifiedCount: result.modifiedCount }), { 
+                    status: 200,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            } else {
+                return new Response(JSON.stringify({ message: 'No attendees were updated' }), { 
+                    status: 404,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
         } else {
             return new Response(JSON.stringify({ message: 'Invalid request data' }), { 
                 status: 400,
@@ -180,6 +232,7 @@ export async function PUT(request) {
     } finally {
         if (client) {
             await client.close();
+            console.log('MongoDB connection closed');
         }
     }
 }

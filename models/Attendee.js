@@ -9,7 +9,6 @@ const AttendeeSchema = new mongoose.Schema({
     email: {
         type: String,
         required: true,
-        unique: true, // Ensure each email is unique
         match: /.+\@.+\..+/, // Basic email validation
     },
     phone: {

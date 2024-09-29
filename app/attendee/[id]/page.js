@@ -12,6 +12,8 @@ export default function AttendeePage({ params }) {
     const [foodCost, setFoodCost] = useState(0);
     const [totalFoodCost, setTotalFoodCost] = useState(0);
     const [editingAttendee, setEditingAttendee] = useState(null);
+    const [isEditingFoodCost, setIsEditingFoodCost] = useState(false);
+    const [tempFoodCost, setTempFoodCost] = useState(0);
 
     const router = useRouter();
 
@@ -60,14 +62,8 @@ export default function AttendeePage({ params }) {
     }, [fetchAttendees]);
 
     const handleFoodCostChange = (e) => {
-        const costPerAttendee = parseFloat(e.target.value);
-        setFoodCost(costPerAttendee);
-        if (!isNaN(costPerAttendee) && costPerAttendee >= 0) {
-            setTotalFoodCost(costPerAttendee * attendees.length);
-        } else {
-            setTotalFoodCost(0);
-        }
-        saveToLocalStorage(attendees, costPerAttendee, costPerAttendee * attendees.length);
+        const cost = parseFloat(e.target.value);
+        setTempFoodCost(cost);
     };
 
     const handleSaveChanges = async () => {
@@ -159,10 +155,11 @@ export default function AttendeePage({ params }) {
             });
 
             const data = await response.json();
+            console.log('Response status:', response.status);
             console.log('Response data:', data);
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}, message: ${data.message}`);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${data.message || 'Unknown error'}`);
             }
 
             console.log('Update successful:', data);
@@ -177,6 +174,7 @@ export default function AttendeePage({ params }) {
             alert('Attendee updated successfully!');
         } catch (err) {
             console.error('Error updating attendee:', err);
+            console.error('Error details:', err.message);
             alert('Error updating attendee: ' + err.message);
         }
     };
@@ -187,6 +185,46 @@ export default function AttendeePage({ params }) {
             foodCost: cost,
             totalFoodCost: total
         }));
+    };
+
+    const handleEditFoodCost = () => {
+        setTempFoodCost(foodCost);
+        setIsEditingFoodCost(true);
+    };
+
+    const handleCancelEditFoodCost = () => {
+        setIsEditingFoodCost(false);
+    };
+
+    const handleSaveFoodCost = async () => {
+        try {
+            const response = await fetch(`/api/attendee`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    eventId: id,
+                    foodCost: tempFoodCost,
+                    attendees: attendees.map(a => ({ _id: a._id }))
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Food cost update successful:', data);
+
+            setFoodCost(tempFoodCost);
+            setTotalFoodCost(tempFoodCost * attendees.length);
+            setIsEditingFoodCost(false);
+            alert('Food cost updated successfully!');
+        } catch (err) {
+            console.error('Error updating food cost:', err);
+            alert('Error updating food cost: ' + err.message);
+        }
     };
 
     if (loading) return <p>Loading...</p>;
@@ -283,15 +321,26 @@ export default function AttendeePage({ params }) {
                     <p><strong>Total Attendees:</strong> {attendees.length}</p>
                     <div className="food-cost-input">
                         <label htmlFor="food-cost">Food Cost for each:</label>
-                        <input
-                            type="number"
-                            id="food-cost"
-                            value={foodCost}
-                            onChange={handleFoodCostChange}
-                            className={isNaN(foodCost) || foodCost <= 0 ? "invalid" : "valid"}
-                        />
+                        {isEditingFoodCost ? (
+                            <>
+                                <input
+                                    type="number"
+                                    id="food-cost"
+                                    value={tempFoodCost}
+                                    onChange={handleFoodCostChange}
+                                    className={isNaN(tempFoodCost) || tempFoodCost < 0 ? "invalid" : "valid"}
+                                />
+                                <button onClick={handleSaveFoodCost}>Save</button>
+                                <button onClick={handleCancelEditFoodCost}>Cancel</button>
+                            </>
+                        ) : (
+                            <>
+                                <span>${foodCost.toFixed(2)}</span>
+                                <button onClick={handleEditFoodCost}>📝</button>
+                            </>
+                        )}
                     </div>
-                    <p><strong>Total Food Cost:</strong> {totalFoodCost ? `$${totalFoodCost.toFixed(2)}` : '$0.00'}</p>
+                    <p><strong>Total Food Cost:</strong> ${totalFoodCost.toFixed(2)}</p>
                 </div>
             </div>
 
