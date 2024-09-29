@@ -1,1 +1,1 @@
-### Project-02 Event Planner
+# Project-02 Event Planner
