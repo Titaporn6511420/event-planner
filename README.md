@@ -42,7 +42,8 @@ The application uses API routes for server-side operations:
   - app/api/tasks/route.js: Handles task-related operations
 
 ## Deployment
-The easiest way to deploy your Next.js app is to use the Vercel Platform from the creators of Next.js.
+Vercel Platform
+https://event-planner-ej22j3vjf-tammys-projects-27bff018.vercel.app/
 
 ## Created by
 - Titaporn Tienanansuk Github:https://github.com/Titaporn6511420
