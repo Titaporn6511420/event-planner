@@ -48,7 +48,6 @@ export default function AddAttendee({ params }) {
     } catch (error) {
       console.error('Error adding attendee:', error);
       setError(error.message);
-      // You might want to show this error to the user in your UI
     } finally {
       setIsLoading(false);
     }
@@ -57,6 +56,7 @@ export default function AddAttendee({ params }) {
   return (
     <div className="event-form-container">
       <h1>Add Attendee</h1>
+      {error && <p className="error-message">{error}</p>}
       <form onSubmit={handleSubmit} className="event-form">
         <label>
           Name:
@@ -110,8 +110,8 @@ export default function AddAttendee({ params }) {
           >
             Cancel
           </button>
-          <button type="submit" className="add-button">
-            Add
+          <button type="submit" className="add-button" disabled={isLoading}>
+            {isLoading ? 'Adding...' : 'Add'}
           </button>
         </div>
       </form>

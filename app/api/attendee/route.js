@@ -36,6 +36,19 @@ export async function POST(request) {
             });
         }
 
+        // Check if an attendee with this email already exists for this event
+        const existingAttendee = await attendeesCollection.findOne({ 
+            eventId: attendeeData.eventId, 
+            email: attendeeData.email 
+        });
+
+        if (existingAttendee) {
+            return new Response(JSON.stringify({ message: 'An attendee with this email already exists for this event' }), { 
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
         // Get the current food cost for this event
         const eventAttendee = await attendeesCollection.findOne({ eventId: attendeeData.eventId });
         if (eventAttendee && eventAttendee.foodCost !== undefined) {
@@ -118,7 +131,9 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
+    let client;
     try {
+        client = new MongoClient(uri);
         await client.connect();
         const attendeesCollection = client.db('event-planner').collection('attendees');
 
@@ -128,18 +143,24 @@ export async function PUT(request) {
         if (body.attendee) {
             // Individual attendee update
             const { _id, ...updateData } = body.attendee;
-            const result = await attendeesCollection.updateOne(
+            console.log('Updating attendee with _id:', _id);
+            console.log('Update data:', updateData);
+
+            const result = await attendeesCollection.findOneAndUpdate(
                 { _id: new ObjectId(_id) },
-                { $set: updateData }
+                { $set: updateData },
+                { returnDocument: 'after' }
             );
 
-            if (result.modifiedCount === 1) {
-                return new Response(JSON.stringify({ message: 'Attendee updated successfully' }), { 
+            console.log('Update result:', result);
+
+            if (result.value) {
+                return new Response(JSON.stringify({ message: 'Attendee updated successfully', attendee: result.value }), { 
                     status: 200,
                     headers: { 'Content-Type': 'application/json' }
                 });
             } else {
-                return new Response(JSON.stringify({ message: 'Attendee not found or not modified' }), { 
+                return new Response(JSON.stringify({ message: 'Attendee not found' }), { 
                     status: 404,
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -157,7 +178,9 @@ export async function PUT(request) {
             headers: { 'Content-Type': 'application/json' }
         });
     } finally {
-        await client.close();
+        if (client) {
+            await client.close();
+        }
     }
 }
 

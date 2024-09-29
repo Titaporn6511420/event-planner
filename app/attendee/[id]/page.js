@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+// test
 
 export default function AttendeePage({ params }) {
     const { id } = params;
@@ -10,95 +11,109 @@ export default function AttendeePage({ params }) {
     const [error, setError] = useState(null);
     const [foodCost, setFoodCost] = useState(0);
     const [totalFoodCost, setTotalFoodCost] = useState(0);
-    const [editingId, setEditingId] = useState(null);
+    const [editingAttendee, setEditingAttendee] = useState(null);
 
     const router = useRouter();
 
-    useEffect(() => {
-        fetchAttendees();
-    }, [id]);
-
-    const fetchAttendees = async () => {
+    const fetchAttendees = useCallback(async () => {
         try {
             setLoading(true);
-            console.log('Fetching attendees for eventId:', id);
             const response = await fetch(`/api/attendee?eventId=${id}`);
-            console.log('Response status:', response.status);
-            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
             const data = await response.json();
-            console.log('Fetched attendees:', data);
             
-            if (Array.isArray(data)) {
-                setAttendees(data);
-                console.log('Attendees set:', data);
-                if (data.length > 0 && data[0].foodCost !== undefined) {
-                    setFoodCost(data[0].foodCost);
-                    setTotalFoodCost(data[0].foodCost * data.length);
-                } else {
-                    setFoodCost(0);
-                    setTotalFoodCost(0);
-                }
+            setAttendees(data);
+            if (data.length > 0 && data[0].foodCost !== undefined) {
+                setFoodCost(data[0].foodCost);
+                setTotalFoodCost(data[0].foodCost * data.length);
             } else {
-                console.error('Fetched data is not an array:', data);
-                setError('Invalid data format received from server');
+                setFoodCost(0);
+                setTotalFoodCost(0);
             }
+            
+            // Clear any saved data in localStorage
+            localStorage.removeItem(`attendees_${id}`);
         } catch (err) {
             console.error('Error fetching attendees:', err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
+    }, [id]);
+
+    useEffect(() => {
+        fetchAttendees();
+    }, [fetchAttendees]);
+
+    // Add this new effect to refetch attendees when the component gains focus
+    useEffect(() => {
+        const handleFocus = () => {
+            fetchAttendees();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [fetchAttendees]);
+
+    const handleFoodCostChange = (e) => {
+        const costPerAttendee = parseFloat(e.target.value);
+        setFoodCost(costPerAttendee);
+        if (!isNaN(costPerAttendee) && costPerAttendee >= 0) {
+            setTotalFoodCost(costPerAttendee * attendees.length);
+        } else {
+            setTotalFoodCost(0);
+        }
+        saveToLocalStorage(attendees, costPerAttendee, costPerAttendee * attendees.length);
     };
 
-    const handleAddAttendee = (newAttendee) => {
-        setAttendees(prevAttendees => [...prevAttendees, newAttendee]);
-        updateFoodCost(foodCost, [...attendees, newAttendee].length);
-    };
-
-    const handleEdit = (attendeeId) => {
-        setEditingId(attendeeId);
-    };
-
-    const handleSave = async (attendee) => {
+    const handleSaveChanges = async () => {
         try {
+            const updatedAttendees = attendees.map(attendee => ({
+                _id: attendee._id,
+                foodCost: foodCost
+            }));
+
+            const requestBody = { 
+                eventId: id,
+                foodCost, 
+                attendees: updatedAttendees 
+            };
+
+            console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
             const response = await fetch(`/api/attendee`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    attendee: attendee
-                }),
+                body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
             const data = await response.json();
-            console.log('Update successful:', data);
+            console.log('Save successful:', data);
 
-            setAttendees(prevAttendees => 
-                prevAttendees.map(a => a._id === attendee._id ? attendee : a)
-            );
-            setEditingId(null);
+            const updatedAttendeesList = attendees.map(a => ({ ...a, foodCost }));
+            setAttendees(updatedAttendeesList);
+            setTotalFoodCost(foodCost * updatedAttendeesList.length);
+            localStorage.removeItem(`attendees_${id}`); // Clear local storage after saving
+            alert('Changes saved successfully!');
         } catch (err) {
-            console.error('Error updating attendee:', err);
-            alert('Error updating attendee: ' + err.message);
+            console.error('Error saving changes:', err);
+            alert('Error saving changes: ' + err.message);
         }
     };
 
-    const handleChange = (e, attendee) => {
-        const { name, value } = e.target;
-        setAttendees(prevAttendees => 
-            prevAttendees.map(a => 
-                a._id === attendee._id ? { ...a, [name]: value } : a
-            )
-        );
+    const handleEdit = (attendee) => {
+        setEditingAttendee(attendee);
     };
 
     const handleDelete = async (attendeeId) => {
@@ -115,8 +130,11 @@ export default function AttendeePage({ params }) {
                 const data = await response.json();
                 console.log('Delete successful:', data);
 
-                setAttendees(prevAttendees => prevAttendees.filter(a => a._id !== attendeeId));
-                updateFoodCost(foodCost, attendees.length - 1);
+                const updatedAttendees = attendees.filter(a => a._id !== attendeeId);
+                setAttendees(updatedAttendees);
+                setTotalFoodCost(foodCost * updatedAttendees.length);
+                saveToLocalStorage(updatedAttendees, foodCost, foodCost * updatedAttendees.length);
+                alert('Attendee deleted successfully!');
             } catch (err) {
                 console.error('Error deleting attendee:', err);
                 alert('Error deleting attendee: ' + err.message);
@@ -124,14 +142,51 @@ export default function AttendeePage({ params }) {
         }
     };
 
-    const updateFoodCost = (cost, attendeeCount) => {
-        setFoodCost(cost);
-        setTotalFoodCost(cost * attendeeCount);
+    const handleSaveEdit = async (editedAttendee) => {
+        try {
+            console.log('Sending edited attendee data:', editedAttendee);
+            const response = await fetch(`/api/attendee`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    attendee: {
+                        ...editedAttendee,
+                        _id: editedAttendee._id.toString() // Ensure _id is a string
+                    }
+                }),
+            });
+
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${data.message}`);
+            }
+
+            console.log('Update successful:', data);
+
+            // Update the attendees state with the edited attendee
+            const updatedAttendees = attendees.map(a => 
+                a._id === editedAttendee._id ? {...a, ...editedAttendee} : a
+            );
+            setAttendees(updatedAttendees);
+            setEditingAttendee(null);
+            saveToLocalStorage(updatedAttendees, foodCost, totalFoodCost);
+            alert('Attendee updated successfully!');
+        } catch (err) {
+            console.error('Error updating attendee:', err);
+            alert('Error updating attendee: ' + err.message);
+        }
     };
 
-    const handleFoodCostChange = (e) => {
-        const newFoodCost = parseFloat(e.target.value);
-        updateFoodCost(newFoodCost, attendees.length);
+    const saveToLocalStorage = (attendeesList, cost, total) => {
+        localStorage.setItem(`attendees_${id}`, JSON.stringify({
+            attendees: attendeesList,
+            foodCost: cost,
+            totalFoodCost: total
+        }));
     };
 
     if (loading) return <p>Loading...</p>;
@@ -181,63 +236,36 @@ export default function AttendeePage({ params }) {
                         ) : (
                             attendees.map(attendee => (
                                 <tr key={attendee._id}>
-                                    <td>
-                                        {editingId === attendee._id ? (
-                                            <input
-                                                type="text"
-                                                name="attendee_name"
-                                                value={attendee.attendee_name}
-                                                onChange={(e) => handleChange(e, attendee)}
-                                            />
-                                        ) : (
-                                            attendee.attendee_name
-                                        )}
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.attendee_name} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, attendee_name: e.target.value})}
+                                        /> : attendee.attendee_name}
+                                    </td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.email} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, email: e.target.value})}
+                                        /> : attendee.email}
+                                    </td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.phone} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, phone: e.target.value})}
+                                        /> : attendee.phone}
+                                    </td>
+                                    <td>{editingAttendee?._id === attendee._id ? 
+                                        <input 
+                                            value={editingAttendee.foodAllergies} 
+                                            onChange={(e) => setEditingAttendee({...editingAttendee, foodAllergies: e.target.value})}
+                                        /> : attendee.foodAllergies || "-"}
                                     </td>
                                     <td>
-                                        {editingId === attendee._id ? (
-                                            <input
-                                                type="email"
-                                                name="email"
-                                                value={attendee.email}
-                                                onChange={(e) => handleChange(e, attendee)}
-                                            />
-                                        ) : (
-                                            attendee.email
-                                        )}
-                                    </td>
-                                    <td>
-                                        {editingId === attendee._id ? (
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={attendee.phone}
-                                                onChange={(e) => handleChange(e, attendee)}
-                                            />
-                                        ) : (
-                                            attendee.phone
-                                        )}
-                                    </td>
-                                    <td>
-                                        {editingId === attendee._id ? (
-                                            <input
-                                                type="text"
-                                                name="foodAllergies"
-                                                value={attendee.foodAllergies || ""}
-                                                onChange={(e) => handleChange(e, attendee)}
-                                            />
-                                        ) : (
-                                            attendee.foodAllergies || "-"
-                                        )}
-                                    </td>
-                                    <td>
-                                        {editingId === attendee._id ? (
-                                            <>
-                                                <button onClick={() => handleSave(attendee)}>Save</button>
-                                                <button onClick={() => setEditingId(null)}>Cancel</button>
-                                            </>
+                                        {editingAttendee?._id === attendee._id ? (
+                                            <button onClick={() => handleSaveEdit(editingAttendee)}>Save</button>
                                         ) : (
                                             <>
-                                                <button onClick={() => handleEdit(attendee._id)}>📝</button>
+                                                <button onClick={() => handleEdit(attendee)}>📝</button>
                                                 <button onClick={() => handleDelete(attendee._id)}>🗑️</button>
                                             </>
                                         )}
@@ -265,16 +293,6 @@ export default function AttendeePage({ params }) {
                     </div>
                     <p><strong>Total Food Cost:</strong> {totalFoodCost ? `$${totalFoodCost.toFixed(2)}` : '$0.00'}</p>
                 </div>
-            </div>
-
-            {/* Save Changes Button */}
-            <div className="save-changes-button">
-                <button onClick={() => {
-                    handleSaveChanges();
-                    router.push('/');
-                }} className="save-btn">
-                    Save Changes
-                </button>
             </div>
 
             <style jsx>{`
@@ -396,35 +414,9 @@ export default function AttendeePage({ params }) {
                     border-color: green;
                 }
 
-                /* Save Changes Button Styling */
-                .save-changes-button {
-                    text-align: right;
-                }
-
-                .save-btn {
-                    padding: 10px 20px;
-                    background-color: #6A4BFF;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    transition: background-color 0.3s ease;
-                }
-
-                .save-btn:hover {
-                    background-color: #5a3ee6;
-                }
-
                 .attendee-table button {
                     margin: 0 5px;
                     cursor: pointer;
-                }
-
-                .attendee-table input {
-                    width: 100%;
-                    padding: 5px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
                 }
             `}</style>
         </div>
