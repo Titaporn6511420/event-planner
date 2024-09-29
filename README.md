@@ -26,9 +26,9 @@ Event Planner is a web application built with Next.js that allows users to creat
 3. install
    Set up environment variables:
    Create a .env.local file in the root directory and add the following:
-```
+   ```
    MONGODB_URI=your_mongodb_connection_string
-```
+   ```
 4. Run the development server:
    ```
       pnpm run dev
