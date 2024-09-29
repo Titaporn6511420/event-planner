@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-// test
 
 export default function AttendeePage({ params }) {
     const { id } = params;
@@ -11,7 +10,6 @@ export default function AttendeePage({ params }) {
     const [error, setError] = useState(null);
     const [foodCost, setFoodCost] = useState(0);
     const [totalFoodCost, setTotalFoodCost] = useState(0);
-    const [editingAttendee, setEditingAttendee] = useState(null);
     const [isEditingFoodCost, setIsEditingFoodCost] = useState(false);
     const [tempFoodCost, setTempFoodCost] = useState(0);
 
@@ -26,10 +24,13 @@ export default function AttendeePage({ params }) {
             }
             const data = await response.json();
             
-            setAttendees(data);
-            if (data.length > 0 && data[0].foodCost !== undefined) {
-                setFoodCost(data[0].foodCost);
-                setTotalFoodCost(data[0].foodCost * data.length);
+            // Sort attendees by name (A-Z)
+            const sortedAttendees = data.sort((a, b) => a.attendee_name.localeCompare(b.attendee_name));
+            
+            setAttendees(sortedAttendees);
+            if (sortedAttendees.length > 0 && sortedAttendees[0].foodCost !== undefined) {
+                setFoodCost(sortedAttendees[0].foodCost);
+                setTotalFoodCost(sortedAttendees[0].foodCost * sortedAttendees.length);
             } else {
                 setFoodCost(0);
                 setTotalFoodCost(0);
@@ -108,10 +109,6 @@ export default function AttendeePage({ params }) {
         }
     };
 
-    const handleEdit = (attendee) => {
-        setEditingAttendee(attendee);
-    };
-
     const handleDelete = async (attendeeId) => {
         if (window.confirm('Are you sure you want to delete this attendee?')) {
             try {
@@ -135,47 +132,6 @@ export default function AttendeePage({ params }) {
                 console.error('Error deleting attendee:', err);
                 alert('Error deleting attendee: ' + err.message);
             }
-        }
-    };
-
-    const handleSaveEdit = async (editedAttendee) => {
-        try {
-            console.log('Sending edited attendee data:', editedAttendee);
-            const response = await fetch(`/api/attendee`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    attendee: {
-                        ...editedAttendee,
-                        _id: editedAttendee._id.toString() // Ensure _id is a string
-                    }
-                }),
-            });
-
-            const data = await response.json();
-            console.log('Response status:', response.status);
-            console.log('Response data:', data);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}, message: ${data.message || 'Unknown error'}`);
-            }
-
-            console.log('Update successful:', data);
-
-            // Update the attendees state with the edited attendee
-            const updatedAttendees = attendees.map(a => 
-                a._id === editedAttendee._id ? {...a, ...editedAttendee} : a
-            );
-            setAttendees(updatedAttendees);
-            setEditingAttendee(null);
-            saveToLocalStorage(updatedAttendees, foodCost, totalFoodCost);
-            alert('Attendee updated successfully!');
-        } catch (err) {
-            console.error('Error updating attendee:', err);
-            console.error('Error details:', err.message);
-            alert('Error updating attendee: ' + err.message);
         }
     };
 
@@ -274,39 +230,12 @@ export default function AttendeePage({ params }) {
                         ) : (
                             attendees.map(attendee => (
                                 <tr key={attendee._id}>
-                                    <td>{editingAttendee?._id === attendee._id ? 
-                                        <input 
-                                            value={editingAttendee.attendee_name} 
-                                            onChange={(e) => setEditingAttendee({...editingAttendee, attendee_name: e.target.value})}
-                                        /> : attendee.attendee_name}
-                                    </td>
-                                    <td>{editingAttendee?._id === attendee._id ? 
-                                        <input 
-                                            value={editingAttendee.email} 
-                                            onChange={(e) => setEditingAttendee({...editingAttendee, email: e.target.value})}
-                                        /> : attendee.email}
-                                    </td>
-                                    <td>{editingAttendee?._id === attendee._id ? 
-                                        <input 
-                                            value={editingAttendee.phone} 
-                                            onChange={(e) => setEditingAttendee({...editingAttendee, phone: e.target.value})}
-                                        /> : attendee.phone}
-                                    </td>
-                                    <td>{editingAttendee?._id === attendee._id ? 
-                                        <input 
-                                            value={editingAttendee.foodAllergies} 
-                                            onChange={(e) => setEditingAttendee({...editingAttendee, foodAllergies: e.target.value})}
-                                        /> : attendee.foodAllergies || "-"}
-                                    </td>
+                                    <td>{attendee.attendee_name}</td>
+                                    <td>{attendee.email}</td>
+                                    <td>{attendee.phone}</td>
+                                    <td>{attendee.foodAllergies || "-"}</td>
                                     <td>
-                                        {editingAttendee?._id === attendee._id ? (
-                                            <button onClick={() => handleSaveEdit(editingAttendee)}>Save</button>
-                                        ) : (
-                                            <>
-                                                <button onClick={() => handleEdit(attendee)}>📝</button>
-                                                <button onClick={() => handleDelete(attendee._id)}>🗑️</button>
-                                            </>
-                                        )}
+                                        <button onClick={() => handleDelete(attendee._id)}>🗑️</button>
                                     </td>
                                 </tr>
                             ))
