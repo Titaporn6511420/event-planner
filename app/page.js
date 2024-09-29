@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+// test
 
 export default function HomePage() {
   const [events, setEvents] = useState([]);
