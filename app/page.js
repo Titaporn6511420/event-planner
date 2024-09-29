@@ -110,7 +110,7 @@ export default function HomePage() {
         <hr />
         {error && <div className="error-message">{error}</div>}
         {events.length === 0 ? (
-          <div className="no-events">There's no event in here</div>
+          <div className="no-events">There is no event in here</div>
         ) : (
           <div className="event-list">
             {events.map(event => (
